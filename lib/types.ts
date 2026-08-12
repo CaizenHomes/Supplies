@@ -458,6 +458,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      spent_this_month: { Args: never; Returns: number }
       mark_ordered: {
         Args: { p_item_id: string; p_receipt_path: string }
         Returns: {
