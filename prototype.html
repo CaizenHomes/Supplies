@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CaizenX Supplies — Prototype</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --border: #e4e7ec;
+    --border-strong: #cfd4dc;
+    --text: #101828;
+    --text-muted: #667085;
+    --text-subtle: #98a2b3;
+    --accent: #0d7e6b;
+    --accent-hover: #0a6455;
+    --accent-soft: #e6f4f1;
+    --warning: #b54708;
+    --warning-soft: #fef3e6;
+    --danger: #b42318;
+    --danger-soft: #fee4e2;
+    --success: #067647;
+    --success-soft: #dcfae6;
+    --info-soft: #eff4ff;
+    --info: #175cd3;
+    --radius: 8px;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,0.05);
+    --shadow-md: 0 4px 8px -2px rgba(16,24,40,0.10), 0 2px 4px -2px rgba(16,24,40,0.06);
+  }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: grid; place-items: center;
+    color: white; font-weight: 700; font-size: 14px;
+  }
+  .brand-name { font-weight: 600; font-size: 15px; }
+  .brand-sub { color: var(--text-subtle); font-size: 12px; margin-left: 6px; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .user-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .user-select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .role-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: var(--info-soft);
+    color: var(--info);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .role-badge.manager { background: var(--accent-soft); color: var(--accent); }
+  .role-badge.admin { background: #fdf2fa; color: #9e165f; }
+
+  main { padding: 24px 32px 48px; max-width: 1280px; margin: 0 auto; }
+
+  .budget-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    box-shadow: var(--shadow-sm);
+  }
+  .budget-info { flex: 1; }
+  .budget-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .budget-amount { font-size: 24px; font-weight: 700; }
+  .budget-amount .remaining { color: var(--text-muted); font-weight: 400; font-size: 15px; margin-left: 8px; }
+  .budget-bar {
+    margin-top: 12px;
+    height: 8px;
+    background: #eef0f3;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .budget-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+  .budget-bar-fill.warning { background: #f79009; }
+  .budget-bar-fill.over { background: var(--danger); }
+  .budget-stats { display: flex; gap: 24px; align-items: center; }
+  .budget-stat { text-align: right; }
+  .budget-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .budget-stat-value { font-size: 18px; font-weight: 600; margin-top: 2px; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .tab {
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-badge {
+    background: var(--danger);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+  }
+  .tab.hidden { display: none; }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .section-title { font-size: 16px; font-weight: 600; }
+  .section-hint { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  button { font-family: inherit; cursor: pointer; border: none; font-size: 14px; }
+  .btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.1s;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); }
+  .btn-secondary:hover { background: var(--bg); }
+  .btn-ghost { background: transparent; color: var(--text-muted); padding: 6px 8px; }
+  .btn-ghost:hover { color: var(--text); background: var(--bg); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { opacity: 0.9; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  table {
+    width: 100%;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #fafbfc;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13.5px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafbfc; }
+  .col-actions { text-align: right; white-space: nowrap; }
+  .col-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .status-wishlist { background: #f2f4f7; color: #475467; }
+  .status-in_list { background: var(--info-soft); color: var(--info); }
+  .status-pending_approval { background: var(--warning-soft); color: var(--warning); }
+  .status-ordered { background: #f4ebff; color: #6941c6; }
+  .status-received { background: var(--success-soft); color: var(--success); }
+  .status-rejected { background: var(--danger-soft); color: var(--danger); }
+
+  .empty {
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .empty-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+
+  .approval-list { display: flex; flex-direction: column; gap: 12px; }
+  .approval-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--warning);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .approval-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .approval-item-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .approval-meta { font-size: 12px; color: var(--text-muted); }
+  .approval-details {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 14px;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 6px;
+  }
+  .approval-detail-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .approval-detail-value { font-size: 14px; font-weight: 500; margin-top: 2px; }
+  .approval-over { color: var(--danger); font-weight: 600; }
+  .approval-reason { background: var(--warning-soft); border: 1px solid #fedd8a; border-radius: 6px; padding: 10px 12px; margin-bottom: 14px; font-size: 13px; color: #7a4d00; }
+  .approval-reason .approval-detail-label { color: var(--warning); margin-bottom: 3px; display: block; }
+  .approval-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(16, 24, 40, 0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-header { padding: 20px 24px 12px; border-bottom: 1px solid var(--border); }
+  .modal-title { font-size: 17px; font-weight: 600; }
+  .modal-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer {
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    background: #fafbfc;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 5px; color: var(--text); }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  .live-total { background: var(--bg); padding: 12px; border-radius: 6px; margin-bottom: 14px; font-size: 13px; }
+  .live-total-row { display: flex; justify-content: space-between; padding: 3px 0; }
+  .live-total-row.warn { color: var(--danger); font-weight: 600; }
+  .live-total-row.divider { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; font-weight: 600; }
+
+  .alert { padding: 10px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .alert-warning { background: var(--warning-soft); color: var(--warning); border: 1px solid #fedd8a; }
+  .alert-info { background: var(--info-soft); color: var(--info); border: 1px solid #b9d7ff; }
+  .alert-icon { font-size: 16px; line-height: 1; }
+  .alert-title { font-weight: 600; margin-bottom: 2px; }
+
+  .file-input {
+    border: 1px dashed var(--border-strong);
+    padding: 20px;
+    border-radius: 6px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--bg);
+  }
+  .file-input:hover { border-color: var(--accent); color: var(--accent); }
+  .file-input.has-file { border-style: solid; border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  .receipt-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .receipt-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+  .item-name-cell { font-weight: 500; }
+  .item-vendor { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+
+  .avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+  .filter-bar select { padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: 6px; font-size: 13px; background: white; }
+
+  .settings-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 480px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .banner {
+    background: #fff8e1;
+    border: 1px solid #fedd8a;
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #7a4d00;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .banner-dismiss { background: none; border: none; color: #7a4d00; cursor: pointer; font-size: 18px; opacity: 0.6; }
+  .banner-dismiss:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">C</div>
+    <div>
+      <span class="brand-name">CaizenX Supplies</span>
+      <span class="brand-sub" id="currentMonthLabel"></span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="userRoleBadge" class="role-badge">Team</span>
+    <label for="userPicker" style="font-size: 12px; color: var(--text-muted);">Signed in as</label>
+    <select id="userPicker" class="user-select"></select>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="prototypeBanner">
+    <span><strong>Prototype demo</strong> — switch the user (top right) to test the three permission levels. <strong>Team members</strong> see only the Wishlist (each capped at 1/3 of the budget). <strong>Managers</strong> also get Order List + History and can move wishes onto the order list. <strong>Manpreet (admin)</strong> additionally gets Approvals + Budget Settings. Data lives in your browser only.</span>
+    <button class="banner-dismiss" onclick="document.getElementById('prototypeBanner').style.display='none'">×</button>
+  </div>
+
+  <!-- Budget card (managers + admin) -->
+  <div class="budget-card" id="budgetCard">
+    <div class="budget-info">
+      <div class="budget-label">Monthly Budget</div>
+      <div class="budget-amount">
+        $<span id="budgetSpent">0</span> / $<span id="budgetTotal">2000</span>
+        <span class="remaining" id="budgetRemainingLabel"></span>
+      </div>
+      <div class="budget-bar">
+        <div class="budget-bar-fill" id="budgetBarFill" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="budget-stats">
+      <div class="budget-stat">
+        <div class="budget-stat-label">In wishlist</div>
+        <div class="budget-stat-value" id="statWishlistCount">0</div>
+      </div>
+      <div class="budget-stat">
+        <div class="budget-stat-label">Items in list</div>
+        <div class="budget-stat-value" id="statItemCount">0</div>
+      </div>
+      <div class="budget-stat">
+        <div class="budget-stat-label">Pending approval</div>
+        <div class="budget-stat-value" id="statPendingCount">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Allowance card (team members only) -->
+  <div class="budget-card" id="allowanceCard" style="display:none;">
+    <div class="budget-info">
+      <div class="budget-label">Your Wishlist Allowance</div>
+      <div class="budget-amount">
+        $<span id="allowanceUsed">0</span> / $<span id="allowanceCap">0</span>
+        <span class="remaining" id="allowanceRemainingLabel"></span>
+      </div>
+      <div class="budget-bar">
+        <div class="budget-bar-fill" id="allowanceBarFill" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="budget-stats">
+      <div class="budget-stat">
+        <div class="budget-stat-label">Your wishes</div>
+        <div class="budget-stat-value" id="statMyWishes">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="wishlist">Wishlist</button>
+    <button class="tab" data-tab="order-list" id="orderListTab">Order List</button>
+    <button class="tab" data-tab="history" id="historyTab">Order History</button>
+    <button class="tab hidden" data-tab="approvals" id="approvalsTab">Approvals <span class="tab-badge" id="approvalsBadge">0</span></button>
+    <button class="tab hidden" data-tab="settings" id="settingsTab">Budget Settings</button>
+    <button class="tab hidden" data-tab="team" id="teamTab">Team</button>
+  </div>
+
+  <!-- Wishlist Tab -->
+  <section class="tab-panel" id="panel-wishlist">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">Wishlist — this month</div>
+        <div class="section-hint" id="wishlistHint">Snack items the team would like ordered. A manager moves items from here onto the order list.</div>
+      </div>
+      <button class="btn btn-primary" onclick="openAddWishModal()">+ Add wish</button>
+    </div>
+    <div id="wishlistContainer"></div>
+  </section>
+
+  <!-- Order List Tab -->
+  <section class="tab-panel" id="panel-order-list" style="display: none;">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">Order list — this month</div>
+        <div class="section-hint">Items approved to buy, ordered but not yet received, or awaiting verification.</div>
+      </div>
+    </div>
+    <div id="orderListContainer"></div>
+  </section>
+
+  <!-- Approvals Tab -->
+  <section class="tab-panel" id="panel-approvals" style="display: none;">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">Pending your approval</div>
+        <div class="section-hint">These over-budget items need Manpreet's decision before they can be ordered.</div>
+      </div>
+    </div>
+    <div id="approvalListContainer"></div>
+  </section>
+
+  <!-- History Tab -->
+  <section class="tab-panel" id="panel-history" style="display: none;">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">Order history</div>
+        <div class="section-hint">Received and verified items, plus rejected requests.</div>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <label for="historyFilter" style="font-size:12px;color:var(--text-muted);">Filter:</label>
+      <select id="historyFilter" onchange="renderHistory()">
+        <option value="all">All items</option>
+        <option value="received">Received & verified</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </div>
+    <div id="historyContainer"></div>
+  </section>
+
+  <!-- Settings Tab -->
+  <section class="tab-panel" id="panel-settings" style="display: none;">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">Budget settings</div>
+        <div class="section-hint">Only Manpreet can change the monthly budget.</div>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="field">
+        <label for="budgetInput">Monthly budget ($)</label>
+        <input type="number" id="budgetInput" min="0" step="50">
+        <div class="field-hint">Applies to the current month. Each team member's wishlist allowance is 1/3 of this. Changing it may push existing items over budget.</div>
+      </div>
+      <button class="btn btn-primary" onclick="saveBudget()">Save budget</button>
+    </div>
+  </section>
+
+  <!-- Team / Permissions Tab -->
+  <section class="tab-panel" id="panel-team" style="display: none;">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">Team & permissions</div>
+        <div class="section-hint">Promote a team member to manager, or remove manager access. Only Manpreet can change this.</div>
+      </div>
+    </div>
+    <div id="teamContainer"></div>
+  </section>
+</main>
+
+<!-- Add Wish Modal -->
+<div class="modal-backdrop" id="addWishModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add to wishlist</div>
+      <div class="modal-subtitle">Add a snack item you'd like ordered this month.</div>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="itemName">Item name</label>
+        <input type="text" id="itemName" placeholder="e.g. Kirkland coffee beans, 3lb">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="itemVendor">Vendor</label>
+          <input type="text" id="itemVendor" placeholder="Costco, Amazon…">
+        </div>
+        <div class="field">
+          <label for="itemQty">Quantity</label>
+          <input type="number" id="itemQty" min="1" value="1" oninput="updateWishTotal()">
+        </div>
+      </div>
+      <div class="field">
+        <label for="itemPrice">Unit price ($)</label>
+        <input type="number" id="itemPrice" min="0" step="0.01" placeholder="0.00" oninput="updateWishTotal()">
+      </div>
+      <div class="field">
+        <label for="itemLink">Link <span style="color: var(--text-subtle); font-weight: 400;">(optional)</span></label>
+        <input type="url" id="itemLink" placeholder="https://costco.ca/… (product page)">
+        <div class="field-hint">Paste a product link so managers can see exactly what to order.</div>
+      </div>
+
+      <div class="live-total">
+        <div class="live-total-row"><span>This item total</span><span id="wishItemTotal">$0.00</span></div>
+        <div id="wishAllowanceBlock">
+          <div class="live-total-row"><span>Your wishlist used</span><span id="wishUsed">$0.00</span></div>
+          <div class="live-total-row"><span>Your allowance (1/3 of budget)</span><span id="wishCap">$0.00</span></div>
+          <div class="live-total-row divider" id="wishRemainingRow"><span>Allowance remaining after</span><span id="wishRemaining">$0.00</span></div>
+        </div>
+      </div>
+
+      <div class="alert alert-warning" id="overAllowanceAlert" style="display: none;">
+        <span class="alert-icon">⚠</span>
+        <div>
+          <div class="alert-title">This exceeds your wishlist allowance</div>
+          <div>Each team member can wish up to 1/3 of the monthly budget. Remove a wish or lower the amount to add this.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('addWishModal')">Cancel</button>
+      <button class="btn btn-primary" id="addWishSubmit" onclick="submitAddWish()">Add to wishlist</button>
+    </div>
+  </div>
+</div>
+
+<!-- Move to Order List Modal -->
+<div class="modal-backdrop" id="moveModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Move to Order List</div>
+      <div class="modal-subtitle">Promote this wish so it can be ordered.</div>
+    </div>
+    <div class="modal-body">
+      <div class="live-total">
+        <div class="live-total-row"><span>This item total</span><span id="moveItemTotal">$0.00</span></div>
+        <div class="live-total-row"><span>Already spent this month</span><span id="moveMonthTotal">$0.00</span></div>
+        <div class="live-total-row divider"><span>Projected total</span><span id="moveProjected">$0.00</span></div>
+        <div class="live-total-row" id="moveRemainingRow"><span>Budget remaining after</span><span id="moveRemaining">$0.00</span></div>
+      </div>
+      <div class="alert alert-warning" id="overBudgetAlert" style="display: none;">
+        <span class="alert-icon">⚠</span>
+        <div>
+          <div class="alert-title">This will put you over budget</div>
+          <div>The request will be sent to Manpreet for approval. It won't be ordered until approved.</div>
+        </div>
+      </div>
+      <div class="field" id="overBudgetReasonField" style="display: none;">
+        <label for="overBudgetReason">Why is this over budget?</label>
+        <textarea id="overBudgetReason" rows="3" placeholder="e.g. End-of-quarter client visit — extra snacks needed for the week."></textarea>
+        <div class="field-hint">Manpreet will see this on the approval request.</div>
+      </div>
+      <div class="alert alert-info" id="withinBudgetAlert" style="display: none;">
+        <span class="alert-icon">✓</span>
+        <div>This fits inside the monthly budget and will be added to the order list right away.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('moveModal')">Cancel</button>
+      <button class="btn btn-primary" id="moveSubmit" onclick="submitMove()">Move to Order List</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mark Ordered Modal -->
+<div class="modal-backdrop" id="markOrderedModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Mark as ordered</div>
+      <div class="modal-subtitle">Attach the receipt or PO for record-keeping.</div>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Receipt or PO</label>
+        <label class="file-input" id="receiptDropzone" for="receiptFile">
+          <div id="receiptDropzoneText">Click to upload a file (PDF, image, screenshot…)</div>
+        </label>
+        <input type="file" id="receiptFile" style="display:none" onchange="onReceiptSelected()">
+        <div class="field-hint">Any file works. Filename will be saved with the record.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('markOrderedModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitMarkOrdered()">Confirm order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mark Received Modal -->
+<div class="modal-backdrop" id="markReceivedModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Mark as received & verified</div>
+      <div class="modal-subtitle">Confirm the correct item arrived. This moves it to Order History.</div>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="checkedByPicker">Verified by</label>
+        <select id="checkedByPicker"></select>
+        <div class="field-hint">The person who physically checked the delivery.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('markReceivedModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitMarkReceived()">Confirm receipt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// PROTOTYPE DATA — replace with real backend calls in production
+// ============================================================
+
+// Roles: 'team' (default) | 'manager' | 'admin'
+// Assign roles here. Everyone defaults to 'team'; grant 'manager' or 'admin' as needed.
+const USERS = [
+  { id: 'manpreet', name: 'Manpreet Sidhu', role: 'admin' },
+  { id: 'lovepreet', name: 'Lovepreet', role: 'manager' },
+  { id: 'harmeet',   name: 'Harmeet Grewal', role: 'manager' },
+  { id: 'ansh',      name: 'Ansh', role: 'team' },
+  { id: 'milan',     name: 'Milan', role: 'team' },
+  { id: 'samar',     name: 'Samar', role: 'team' },
+  { id: 'gurnoor',   name: 'Gurnoor', role: 'team' },
+  { id: 'ashaya',    name: 'Ashaya', role: 'team' },
+  { id: 'sukhman',   name: 'Sukhman', role: 'team' }
+];
+
+// Each team member may hold up to this fraction of the monthly budget in their own wishlist.
+const WISHLIST_CAP_FRACTION = 1 / 3;
+
+let state = {
+  currentUserId: 'ansh', // start as a team member so the wishlist-only view is visible first
+  budget: 2000,
+  currentMonth: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+  items: [
+    { id: 1, name: 'Kirkland Signature Coffee', vendor: 'Costco', qty: 2, unitPrice: 21.99, status: 'wishlist', requestedBy: 'ansh', requestedAt: Date.now() - 86400000 * 2, link: 'https://www.costco.ca/kirkland-signature-coffee.product.html' },
+    { id: 2, name: 'Assorted Granola Bars — 60 ct', vendor: 'Costco', qty: 1, unitPrice: 18.99, status: 'wishlist', requestedBy: 'milan', requestedAt: Date.now() - 86400000 * 1 },
+    { id: 3, name: 'Sparkling Water — Case of 24', vendor: 'Costco', qty: 3, unitPrice: 14.50, status: 'in_list', requestedBy: 'ansh', requestedAt: Date.now() - 86400000 * 3, promotedBy: 'lovepreet', promotedAt: Date.now() - 86400000 * 2 },
+    { id: 4, name: 'Paper Towels — 12 Pack', vendor: 'Costco', qty: 1, unitPrice: 22.99, status: 'ordered', requestedBy: 'milan', requestedAt: Date.now() - 86400000 * 6, promotedBy: 'harmeet', promotedAt: Date.now() - 86400000 * 5, receiptFile: 'costco_receipt.pdf', orderedBy: 'harmeet', orderedAt: Date.now() - 86400000 * 4 },
+    { id: 5, name: 'Trail Mix — 4lb', vendor: 'Costco', qty: 1, unitPrice: 16.49, status: 'received', requestedBy: 'samar', requestedAt: Date.now() - 86400000 * 10, promotedBy: 'lovepreet', promotedAt: Date.now() - 86400000 * 9, receiptFile: 'trailmix.jpg', orderedBy: 'lovepreet', orderedAt: Date.now() - 86400000 * 8, checkedBy: 'harmeet', checkedAt: Date.now() - 86400000 * 5 }
+  ],
+  nextId: 6,
+  pendingModalContext: null
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+const $ = id => document.getElementById(id);
+const fmt = n => '$' + n.toFixed(2);
+const userById = id => USERS.find(u => u.id === id) || { name: 'Unknown', id: 'unknown', role: 'team' };
+const currentUser = () => userById(state.currentUserId);
+const roleOf = () => currentUser().role;
+const isAdmin = () => roleOf() === 'admin';
+const isManager = () => roleOf() === 'manager';
+const canManageOrders = () => roleOf() === 'manager' || roleOf() === 'admin'; // Order List + History + promote
+
+const orderListStatuses = ['in_list', 'ordered'];
+const historyStatuses = ['received', 'rejected'];
+
+// Spent counts committed + purchased items (not wishes, not pending, not rejected)
+function spentThisMonth() {
+  const counted = ['in_list', 'ordered', 'received'];
+  return state.items
+    .filter(i => counted.includes(i.status))
+    .reduce((s, i) => s + i.qty * i.unitPrice, 0);
+}
+function pendingCount() {
+  return state.items.filter(i => i.status === 'pending_approval').length;
+}
+function wishlistCount() {
+  return state.items.filter(i => i.status === 'wishlist').length;
+}
+function wishlistCap() {
+  return state.budget * WISHLIST_CAP_FRACTION;
+}
+// How much of their allowance a team member currently holds (wishes still in the wishlist)
+function wishlistUsedBy(userId) {
+  return state.items
+    .filter(i => i.status === 'wishlist' && i.requestedBy === userId)
+    .reduce((s, i) => s + i.qty * i.unitPrice, 0);
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+
+function render() {
+  renderHeader();
+  renderTopCards();
+  renderTabs();
+  renderWishlist();
+  renderOrderList();
+  renderApprovals();
+  renderHistory();
+  renderSettings();
+  renderTeam();
+}
+
+function renderHeader() {
+  $('currentMonthLabel').textContent = '/ ' + state.currentMonth;
+
+  const picker = $('userPicker');
+  picker.innerHTML = USERS.map(u => {
+    const tag = u.role === 'admin' ? ' (admin)' : u.role === 'manager' ? ' (manager)' : '';
+    return `<option value="${u.id}" ${u.id === state.currentUserId ? 'selected' : ''}>${u.name}${tag}</option>`;
+  }).join('');
+
+  const roleBadge = $('userRoleBadge');
+  if (isAdmin()) { roleBadge.textContent = 'Admin'; roleBadge.className = 'role-badge admin'; }
+  else if (isManager()) { roleBadge.textContent = 'Manager'; roleBadge.className = 'role-badge manager'; }
+  else { roleBadge.textContent = 'Team'; roleBadge.className = 'role-badge'; }
+}
+
+function renderTopCards() {
+  // Team members see only their own wishlist allowance. Managers/admin see the full budget.
+  if (canManageOrders()) {
+    $('budgetCard').style.display = '';
+    $('allowanceCard').style.display = 'none';
+    renderBudget();
+  } else {
+    $('budgetCard').style.display = 'none';
+    $('allowanceCard').style.display = '';
+    renderAllowance();
+  }
+}
+
+function renderBudget() {
+  const spent = spentThisMonth();
+  const total = state.budget;
+  const pct = total > 0 ? Math.min(100, (spent / total) * 100) : 0;
+  const remaining = total - spent;
+
+  $('budgetSpent').textContent = spent.toFixed(2);
+  $('budgetTotal').textContent = total.toFixed(2);
+  $('budgetRemainingLabel').textContent = remaining >= 0
+    ? `· $${remaining.toFixed(2)} remaining`
+    : `· $${Math.abs(remaining).toFixed(2)} over`;
+
+  const fill = $('budgetBarFill');
+  fill.style.width = pct + '%';
+  fill.className = 'budget-bar-fill';
+  if (pct >= 100) fill.classList.add('over');
+  else if (pct >= 80) fill.classList.add('warning');
+
+  $('statWishlistCount').textContent = wishlistCount();
+  $('statItemCount').textContent = state.items.filter(i => orderListStatuses.includes(i.status)).length;
+  $('statPendingCount').textContent = pendingCount();
+}
+
+function renderAllowance() {
+  const used = wishlistUsedBy(state.currentUserId);
+  const cap = wishlistCap();
+  const pct = cap > 0 ? Math.min(100, (used / cap) * 100) : 0;
+  const remaining = cap - used;
+
+  $('allowanceUsed').textContent = used.toFixed(2);
+  $('allowanceCap').textContent = cap.toFixed(2);
+  $('allowanceRemainingLabel').textContent = `· $${Math.max(0, remaining).toFixed(2)} remaining`;
+
+  const fill = $('allowanceBarFill');
+  fill.style.width = pct + '%';
+  fill.className = 'budget-bar-fill';
+  if (pct >= 100) fill.classList.add('over');
+  else if (pct >= 80) fill.classList.add('warning');
+
+  $('statMyWishes').textContent = state.items.filter(i => i.status === 'wishlist' && i.requestedBy === state.currentUserId).length;
+}
+
+function renderTabs() {
+  // Order List + History: managers and admin only
+  $('orderListTab').classList.toggle('hidden', !canManageOrders());
+  $('historyTab').classList.toggle('hidden', !canManageOrders());
+  // Approvals + Budget Settings: admin only
+  $('approvalsTab').classList.toggle('hidden', !isAdmin());
+  $('settingsTab').classList.toggle('hidden', !isAdmin());
+  $('teamTab').classList.toggle('hidden', !isAdmin());
+
+  const badge = $('approvalsBadge');
+  const count = pendingCount();
+  badge.textContent = count;
+  badge.style.display = count > 0 ? '' : 'none';
+
+  // If the active tab is now hidden for this role, fall back to the wishlist
+  const activeTab = document.querySelector('.tab.active');
+  if (activeTab && activeTab.classList.contains('hidden')) {
+    switchTab('wishlist');
+  }
+}
+
+function renderWishlist() {
+  const wishes = state.items
+    .filter(i => i.status === 'wishlist')
+    .sort((a, b) => b.requestedAt - a.requestedAt);
+
+  const hint = $('wishlistHint');
+  hint.textContent = canManageOrders()
+    ? 'Snack items the team would like ordered. Move an item onto the order list to buy it.'
+    : 'Snack items you and the team would like ordered. A manager moves items from here onto the order list.';
+
+  const container = $('wishlistContainer');
+  if (wishes.length === 0) {
+    container.innerHTML = `<div class="empty">
+      <div class="empty-title">Nothing on the wishlist yet</div>
+      <div>Click "Add wish" to request a snack for the month.</div>
+    </div>`;
+    return;
+  }
+
+  const canManage = canManageOrders();
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 38%">Item</th>
+          <th class="col-num">Qty</th>
+          <th class="col-num">Unit</th>
+          <th class="col-num">Total</th>
+          <th>Added by</th>
+          <th class="col-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${wishes.map(item => {
+          const total = item.qty * item.unitPrice;
+          const requester = userById(item.requestedBy);
+          const initials = requester.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+          const canRemove = canManage || item.requestedBy === state.currentUserId;
+
+          let actions = '';
+          if (canManage) actions += `<button class="btn btn-primary btn-sm" onclick="openMoveModal(${item.id})">Move to Order List</button> `;
+          if (canRemove) actions += `<button class="btn btn-ghost btn-sm" title="Remove wish" onclick="removeWish(${item.id})">Remove</button>`;
+          if (!actions) actions = `<span style="color: var(--text-subtle); font-size: 12px;">—</span>`;
+
+          return `
+            <tr>
+              <td>
+                <div class="item-name-cell">${escapeHtml(item.name)}</div>
+                <div class="item-vendor">${escapeHtml(item.vendor)}${linkPill(item.link)}</div>
+              </td>
+              <td class="col-num">${item.qty}</td>
+              <td class="col-num">${fmt(item.unitPrice)}</td>
+              <td class="col-num"><strong>${fmt(total)}</strong></td>
+              <td><span class="avatar" title="${escapeHtml(requester.name)}">${initials}</span><span style="font-size:12.5px;">${escapeHtml(requester.name)}</span></td>
+              <td class="col-actions">${actions}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderOrderList() {
+  const active = state.items
+    .filter(i => orderListStatuses.includes(i.status))
+    .sort((a, b) => a.status.localeCompare(b.status) || b.requestedAt - a.requestedAt);
+
+  const container = $('orderListContainer');
+  if (active.length === 0) {
+    container.innerHTML = `<div class="empty">
+      <div class="empty-title">Nothing on the order list yet</div>
+      <div>Move an item from the wishlist to start ordering it.</div>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 32%">Item</th>
+          <th class="col-num">Qty</th>
+          <th class="col-num">Unit</th>
+          <th class="col-num">Total</th>
+          <th>Status</th>
+          <th>Receipt</th>
+          <th>Verified by</th>
+          <th class="col-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${active.map(renderItemRow).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderItemRow(item) {
+  const total = item.qty * item.unitPrice;
+  const requester = userById(item.requestedBy);
+  const initials = requester.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+  const receiptCell = item.receiptFile
+    ? `<span class="receipt-pill" title="Click to view (prototype: name only)">📎 ${item.receiptFile}</span>`
+    : `<span style="color: var(--text-subtle); font-size: 12px;">—</span>`;
+
+  const verifiedCell = item.checkedBy
+    ? `<span style="font-size: 12.5px;">${userById(item.checkedBy).name}</span>`
+    : `<span style="color: var(--text-subtle); font-size: 12px;">—</span>`;
+
+  let actions = '';
+  if (item.status === 'in_list') {
+    actions = `<button class="btn btn-secondary btn-sm" onclick="openMarkOrderedModal(${item.id})">Mark ordered</button>`;
+  } else if (item.status === 'ordered') {
+    actions = `<button class="btn btn-secondary btn-sm" onclick="openMarkReceivedModal(${item.id})">Mark received</button>`;
+  }
+
+  return `
+    <tr>
+      <td>
+        <div class="item-name-cell">${escapeHtml(item.name)}</div>
+        <div class="item-vendor">
+          <span class="avatar" title="${escapeHtml(requester.name)}">${initials}</span>
+          ${escapeHtml(item.vendor)} · wished by ${escapeHtml(requester.name)}${linkPill(item.link)}
+        </div>
+      </td>
+      <td class="col-num">${item.qty}</td>
+      <td class="col-num">${fmt(item.unitPrice)}</td>
+      <td class="col-num"><strong>${fmt(total)}</strong></td>
+      <td><span class="status status-${item.status}">${statusLabel(item.status)}</span></td>
+      <td>${receiptCell}</td>
+      <td>${verifiedCell}</td>
+      <td class="col-actions">${actions}</td>
+    </tr>
+  `;
+}
+
+function renderApprovals() {
+  const pending = state.items.filter(i => i.status === 'pending_approval');
+  const container = $('approvalListContainer');
+
+  if (pending.length === 0) {
+    container.innerHTML = `<div class="empty">
+      <div class="empty-title">No pending approvals</div>
+      <div>Over-budget items promoted from the wishlist will show up here.</div>
+    </div>`;
+    return;
+  }
+
+  const spent = spentThisMonth();
+
+  container.innerHTML = `<div class="approval-list">${pending.map(item => {
+    const total = item.qty * item.unitPrice;
+    const overBy = (spent + total) - state.budget;
+    const requester = userById(item.requestedBy);
+    return `
+      <div class="approval-card">
+        <div class="approval-header">
+          <div>
+            <div class="approval-item-name">${escapeHtml(item.name)}</div>
+            <div class="approval-meta">Wished by ${escapeHtml(requester.name)} · ${escapeHtml(item.vendor)}</div>
+          </div>
+          <span class="status status-pending_approval">Pending approval</span>
+        </div>
+        <div class="approval-details">
+          <div>
+            <div class="approval-detail-label">Quantity</div>
+            <div class="approval-detail-value">${item.qty}</div>
+          </div>
+          <div>
+            <div class="approval-detail-label">Unit price</div>
+            <div class="approval-detail-value">${fmt(item.unitPrice)}</div>
+          </div>
+          <div>
+            <div class="approval-detail-label">Total</div>
+            <div class="approval-detail-value">${fmt(total)}</div>
+          </div>
+          <div>
+            <div class="approval-detail-label">Would push over by</div>
+            <div class="approval-detail-value approval-over">${fmt(Math.max(0, overBy))}</div>
+          </div>
+        </div>
+        ${item.overBudgetReason ? `<div class="approval-reason"><span class="approval-detail-label">Reason</span><div>${escapeHtml(item.overBudgetReason)}</div></div>` : ''}
+        <div class="approval-actions">
+          <button class="btn btn-secondary" onclick="rejectItem(${item.id})">Reject</button>
+          <button class="btn btn-primary" onclick="approveItem(${item.id})">Approve & add to list</button>
+        </div>
+      </div>
+    `;
+  }).join('')}</div>`;
+}
+
+function renderHistory() {
+  const filter = $('historyFilter').value;
+  let items = state.items.filter(i => historyStatuses.includes(i.status));
+  if (filter !== 'all') items = items.filter(i => i.status === filter);
+  items.sort((a, b) => (b.checkedAt || b.rejectedAt || b.requestedAt) - (a.checkedAt || a.rejectedAt || a.requestedAt));
+
+  const container = $('historyContainer');
+  if (items.length === 0) {
+    container.innerHTML = `<div class="empty">
+      <div class="empty-title">No history yet</div>
+      <div>Received and rejected items appear here.</div>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th class="col-num">Qty</th>
+          <th class="col-num">Total</th>
+          <th>Status</th>
+          <th>Receipt</th>
+          <th>Verified by</th>
+          <th>Completed</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map(item => {
+          const total = item.qty * item.unitPrice;
+          const requester = userById(item.requestedBy);
+          const receiptCell = item.receiptFile
+            ? `<span class="receipt-pill">📎 ${item.receiptFile}</span>`
+            : `<span style="color: var(--text-subtle);">—</span>`;
+          const verifiedCell = item.checkedBy
+            ? userById(item.checkedBy).name
+            : `<span style="color: var(--text-subtle);">—</span>`;
+          const completedDate = item.checkedAt || item.rejectedAt || item.requestedAt;
+          return `
+            <tr>
+              <td>
+                <div class="item-name-cell">${escapeHtml(item.name)}</div>
+                <div class="item-vendor">${escapeHtml(item.vendor)} · by ${escapeHtml(requester.name)}</div>
+              </td>
+              <td class="col-num">${item.qty}</td>
+              <td class="col-num"><strong>${fmt(total)}</strong></td>
+              <td><span class="status status-${item.status}">${statusLabel(item.status)}</span></td>
+              <td>${receiptCell}</td>
+              <td style="font-size: 12.5px;">${verifiedCell}</td>
+              <td style="font-size: 12.5px; color: var(--text-muted);">${new Date(completedDate).toLocaleDateString()}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderSettings() {
+  $('budgetInput').value = state.budget;
+}
+
+function renderTeam() {
+  const container = $('teamContainer');
+  if (!container) return;
+  const roleName = { admin: 'Admin', manager: 'Manager', team: 'Team member' };
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 45%">Name</th>
+          <th>Current role</th>
+          <th class="col-actions">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${USERS.map(u => {
+          const initials = u.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+          const badgeClass = u.role === 'admin' ? 'admin' : u.role === 'manager' ? 'manager' : '';
+          let action;
+          if (u.role === 'admin') {
+            action = `<span style="color: var(--text-subtle); font-size: 12px;">Owner — locked</span>`;
+          } else if (u.role === 'manager') {
+            action = `<button class="btn btn-secondary btn-sm" onclick="setRole('${u.id}','team')">Remove manager</button>`;
+          } else {
+            action = `<button class="btn btn-primary btn-sm" onclick="setRole('${u.id}','manager')">Make manager</button>`;
+          }
+          return `
+            <tr>
+              <td>
+                <span class="avatar" title="${escapeHtml(u.name)}">${initials}</span>
+                <span style="font-weight: 500;">${escapeHtml(u.name)}</span>
+              </td>
+              <td><span class="role-badge ${badgeClass}">${roleName[u.role] || u.role}</span></td>
+              <td class="col-actions">${action}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function setRole(id, role) {
+  if (!isAdmin()) return; // only Manpreet can change roles
+  const u = userById(id);
+  if (!u || u.role === 'admin') return; // never change the admin/owner
+  u.role = role;
+  render();
+}
+
+function statusLabel(s) {
+  return {
+    wishlist: 'In wishlist',
+    in_list: 'In list',
+    pending_approval: 'Pending approval',
+    ordered: 'Ordered',
+    received: 'Received & verified',
+    rejected: 'Rejected'
+  }[s] || s;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Normalize a user-entered link so it always opens correctly
+function normalizeLink(url) {
+  if (!url) return '';
+  return /^https?:\/\//i.test(url) ? url : 'https://' + url;
+}
+
+// Small clickable "link" pill for item rows (empty string when no link)
+function linkPill(link) {
+  if (!link) return '';
+  return ` · <a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer" class="receipt-pill" style="text-decoration:none;">🔗 link</a>`;
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+  const panel = $(`panel-${tabName}`);
+  if (tab && panel && !tab.classList.contains('hidden')) {
+    tab.classList.add('active');
+    panel.style.display = '';
+  } else {
+    // requested tab not available to this role — default to wishlist
+    document.querySelector('.tab[data-tab="wishlist"]').classList.add('active');
+    $('panel-wishlist').style.display = '';
+  }
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+});
+
+$('userPicker').addEventListener('change', e => {
+  state.currentUserId = e.target.value;
+  render();
+});
+
+// --- Add wish flow ---
+
+function openAddWishModal() {
+  $('itemName').value = '';
+  $('itemVendor').value = '';
+  $('itemQty').value = 1;
+  $('itemPrice').value = '';
+  $('itemLink').value = '';
+  // Allowance block + cap enforcement only apply to team members
+  const team = roleOf() === 'team';
+  $('wishAllowanceBlock').style.display = team ? '' : 'none';
+  updateWishTotal();
+  $('addWishModal').classList.add('open');
+  setTimeout(() => $('itemName').focus(), 50);
+}
+
+function updateWishTotal() {
+  const qty = parseFloat($('itemQty').value) || 0;
+  const unit = parseFloat($('itemPrice').value) || 0;
+  const itemTotal = qty * unit;
+  $('wishItemTotal').textContent = fmt(itemTotal);
+
+  const submit = $('addWishSubmit');
+  if (roleOf() === 'team') {
+    const used = wishlistUsedBy(state.currentUserId);
+    const cap = wishlistCap();
+    const remaining = cap - (used + itemTotal);
+    $('wishUsed').textContent = fmt(used);
+    $('wishCap').textContent = fmt(cap);
+    $('wishRemaining').textContent = fmt(remaining);
+    const over = (used + itemTotal) > cap + 0.001;
+    $('wishRemainingRow').classList.toggle('warn', over);
+    $('overAllowanceAlert').style.display = over ? '' : 'none';
+    submit.disabled = over;
+    submit.textContent = over ? 'Over allowance' : 'Add to wishlist';
+  } else {
+    $('overAllowanceAlert').style.display = 'none';
+    submit.disabled = false;
+    submit.textContent = 'Add to wishlist';
+  }
+}
+
+function submitAddWish() {
+  const name = $('itemName').value.trim();
+  const vendor = $('itemVendor').value.trim();
+  const qty = parseInt($('itemQty').value);
+  const unitPrice = parseFloat($('itemPrice').value);
+  const link = normalizeLink($('itemLink').value.trim());
+
+  if (!name || !vendor || !qty || !unitPrice || unitPrice <= 0) {
+    alert('Fill in all fields with valid values.');
+    return;
+  }
+
+  const total = qty * unitPrice;
+
+  // Enforce per-team-member wishlist allowance (1/3 of budget)
+  if (roleOf() === 'team') {
+    const used = wishlistUsedBy(state.currentUserId);
+    if (used + total > wishlistCap() + 0.001) {
+      alert('This exceeds your wishlist allowance (1/3 of the monthly budget). Remove a wish or lower the amount.');
+      return;
+    }
+  }
+
+  state.items.push({
+    id: state.nextId++,
+    name, vendor, qty, unitPrice, link,
+    status: 'wishlist',
+    requestedBy: state.currentUserId,
+    requestedAt: Date.now()
+  });
+  closeModal('addWishModal');
+  render();
+}
+
+function removeWish(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item || item.status !== 'wishlist') return;
+  const allowed = canManageOrders() || item.requestedBy === state.currentUserId;
+  if (!allowed) return;
+  if (!confirm(`Remove "${item.name}" from the wishlist?`)) return;
+  state.items = state.items.filter(i => i.id !== id);
+  render();
+}
+
+// --- Move to order list (promote) flow — managers + admin ---
+
+function openMoveModal(itemId) {
+  if (!canManageOrders()) return;
+  state.pendingModalContext = { itemId };
+  $('overBudgetReason').value = '';
+  updateMoveTotal();
+  $('moveModal').classList.add('open');
+}
+
+function updateMoveTotal() {
+  const ctx = state.pendingModalContext;
+  const item = state.items.find(i => i.id === ctx.itemId);
+  if (!item) return;
+  const itemTotal = item.qty * item.unitPrice;
+  const spent = spentThisMonth();
+  const projected = spent + itemTotal;
+  const remaining = state.budget - projected;
+
+  $('moveItemTotal').textContent = fmt(itemTotal);
+  $('moveMonthTotal').textContent = fmt(spent);
+  $('moveProjected').textContent = fmt(projected);
+  $('moveRemaining').textContent = fmt(remaining);
+
+  const over = projected > state.budget;
+  $('moveRemainingRow').classList.toggle('warn', over);
+  $('overBudgetAlert').style.display = over ? '' : 'none';
+  $('overBudgetReasonField').style.display = over ? '' : 'none';
+  $('withinBudgetAlert').style.display = over ? 'none' : '';
+  $('moveSubmit').textContent = over ? 'Send for approval' : 'Move to Order List';
+}
+
+function submitMove() {
+  const ctx = state.pendingModalContext;
+  const item = state.items.find(i => i.id === ctx.itemId);
+  if (!item) return;
+  const total = item.qty * item.unitPrice;
+  const spent = spentThisMonth();
+  const over = (spent + total) > state.budget;
+
+  if (over) {
+    const reason = $('overBudgetReason').value.trim();
+    if (!reason) {
+      alert('Please add a short reason why this is over budget before sending it to Manpreet.');
+      return;
+    }
+    item.overBudgetReason = reason;
+  }
+
+  item.status = over ? 'pending_approval' : 'in_list';
+  item.promotedBy = state.currentUserId;
+  item.promotedAt = Date.now();
+  closeModal('moveModal');
+  render();
+}
+
+// --- Approval flow (admin) ---
+
+function approveItem(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+  item.status = 'in_list';
+  item.approvedBy = state.currentUserId;
+  item.approvedAt = Date.now();
+  render();
+}
+
+function rejectItem(id) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+  if (!confirm(`Reject "${item.name}"?`)) return;
+  item.status = 'rejected';
+  item.rejectedBy = state.currentUserId;
+  item.rejectedAt = Date.now();
+  render();
+}
+
+// --- Mark ordered flow ---
+
+function openMarkOrderedModal(itemId) {
+  state.pendingModalContext = { itemId };
+  $('receiptFile').value = '';
+  $('receiptDropzone').classList.remove('has-file');
+  $('receiptDropzoneText').textContent = 'Click to upload a file (PDF, image, screenshot…)';
+  $('markOrderedModal').classList.add('open');
+}
+
+function onReceiptSelected() {
+  const file = $('receiptFile').files[0];
+  const dropzone = $('receiptDropzone');
+  const text = $('receiptDropzoneText');
+  if (file) {
+    dropzone.classList.add('has-file');
+    text.textContent = '📎 ' + file.name + '  (click to change)';
+  } else {
+    dropzone.classList.remove('has-file');
+    text.textContent = 'Click to upload a file';
+  }
+}
+
+function submitMarkOrdered() {
+  const ctx = state.pendingModalContext;
+  const file = $('receiptFile').files[0];
+  if (!file) { alert('Please attach a receipt or PO.'); return; }
+  const item = state.items.find(i => i.id === ctx.itemId);
+  if (!item) return;
+  item.status = 'ordered';
+  item.receiptFile = file.name;
+  item.orderedBy = state.currentUserId;
+  item.orderedAt = Date.now();
+  closeModal('markOrderedModal');
+  render();
+}
+
+// --- Mark received flow ---
+
+function openMarkReceivedModal(itemId) {
+  state.pendingModalContext = { itemId };
+  const picker = $('checkedByPicker');
+  picker.innerHTML = USERS.map(u =>
+    `<option value="${u.id}" ${u.id === state.currentUserId ? 'selected' : ''}>${u.name}</option>`
+  ).join('');
+  $('markReceivedModal').classList.add('open');
+}
+
+function submitMarkReceived() {
+  const ctx = state.pendingModalContext;
+  const checkedById = $('checkedByPicker').value;
+  const item = state.items.find(i => i.id === ctx.itemId);
+  if (!item) return;
+  item.status = 'received';
+  item.checkedBy = checkedById;
+  item.checkedAt = Date.now();
+  closeModal('markReceivedModal');
+  render();
+}
+
+// --- Budget settings ---
+
+function saveBudget() {
+  const val = parseFloat($('budgetInput').value);
+  if (!val || val <= 0) { alert('Enter a valid budget amount.'); return; }
+  state.budget = val;
+  render();
+}
+
+// --- Modal helpers ---
+
+function closeModal(id) {
+  $(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+render();
+</script>
+
+</body>
+</html>
