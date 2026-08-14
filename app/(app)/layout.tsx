@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getCurrentProfile } from "@/lib/profile";
+import { getBudgetSnapshot } from "@/lib/budget";
 import { NavBar } from "@/components/nav-bar";
 import { NotificationBell } from "@/components/notification-bell";
 import { SignOutButton } from "@/components/sign-out-button";
+import { BudgetBar } from "@/components/budget-bar";
 
 const ROLE_LABEL: Record<string, string> = {
   executive: "Executive",
@@ -23,6 +25,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (!profile) {
     redirect("/login");
   }
+
+  const { budget, spent } = await getBudgetSnapshot();
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
@@ -46,6 +50,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <SignOutButton />
           </div>
         </div>
+        <BudgetBar budget={budget} spent={spent} />
         <NavBar role={profile.role} />
       </header>
 
