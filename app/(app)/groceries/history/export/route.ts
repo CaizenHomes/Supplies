@@ -11,6 +11,7 @@ function csvEscape(value: unknown): string {
 }
 
 const COLUMNS = [
+  "module",
   "name",
   "vendor",
   "qty",
@@ -45,6 +46,7 @@ export async function GET() {
   const { data: items, error } = await supabase
     .from("items_detailed")
     .select("*")
+    .eq("module", "groceries")
     .in("status", ["received", "rejected", "cancelled"])
     .order("updated_at", { ascending: false });
 
@@ -61,7 +63,7 @@ export async function GET() {
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="supplies-history-${new Date().toISOString().slice(0, 10)}.csv"`,
+      "Content-Disposition": `attachment; filename="groceries-history-${new Date().toISOString().slice(0, 10)}.csv"`,
     },
   });
 }

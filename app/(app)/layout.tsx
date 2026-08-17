@@ -1,10 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getCurrentProfile } from "@/lib/profile";
-import { getBudgetSnapshot } from "@/lib/budget";
-import { NavBar } from "@/components/nav-bar";
+import { getPendingApprovalCount } from "@/lib/pending-approvals";
+import { ModuleSwitcher } from "@/components/module-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
-import { BudgetBar } from "@/components/budget-bar";
 
 const ROLE_LABEL: Record<string, string> = {
   executive: "Executive",
@@ -25,18 +25,27 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect("/login");
   }
 
-  const { budget, spent } = await getBudgetSnapshot();
+  // Only executives approve, so only they need the badge count query.
+  const [groceriesPending, suppliesPending] =
+    profile.role === "executive"
+      ? await Promise.all([
+          getPendingApprovalCount("groceries"),
+          getPendingApprovalCount("supplies"),
+        ])
+      : [0, 0];
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <header className="sticky top-0 z-10 border-b border-border bg-surface">
-        <div className="flex items-center justify-between px-8 py-3.5">
+        <div className="flex items-center justify-between gap-4 px-8 py-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-sm font-bold text-white">
               C
             </div>
             <span className="text-[15px] font-semibold text-text">CaizenX Supplies</span>
           </div>
+
+          <ModuleSwitcher groceriesPending={groceriesPending} suppliesPending={suppliesPending} />
 
           <div className="flex items-center gap-4">
             <span
@@ -45,11 +54,17 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               {ROLE_LABEL[profile.role]}
             </span>
             <span className="text-sm text-text-muted">{profile.full_name}</span>
+            {profile.role === "executive" && (
+              <Link
+                href="/admin"
+                className="text-sm font-medium text-text-muted hover:text-text"
+              >
+                Admin
+              </Link>
+            )}
             <SignOutButton />
           </div>
         </div>
-        <BudgetBar budget={budget} spent={spent} />
-        <NavBar role={profile.role} />
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-8 py-6">{children}</main>

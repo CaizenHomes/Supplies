@@ -37,9 +37,9 @@ export async function setBudget(
   }
 
   revalidatePath("/admin");
-  revalidatePath("/wishlist");
-  revalidatePath("/orders");
-  revalidatePath("/approvals");
+  revalidatePath("/groceries/wishlist");
+  revalidatePath("/groceries/orders");
+  revalidatePath("/groceries/approvals");
   return { success: true };
 }
 

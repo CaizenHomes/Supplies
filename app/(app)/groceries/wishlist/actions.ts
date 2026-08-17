@@ -56,7 +56,7 @@ export async function addWishlistItem(
     return { error: error.message };
   }
 
-  revalidatePath("/wishlist");
+  revalidatePath("/groceries/wishlist");
   return { success: true };
 }
 
@@ -79,7 +79,7 @@ export async function deleteWishlistItem(itemId: string) {
     );
   }
 
-  revalidatePath("/wishlist");
+  revalidatePath("/groceries/wishlist");
 }
 
 export type PromoteActionState = {
@@ -106,8 +106,8 @@ export async function promoteWishlistItem(
     return { error: error.message };
   }
 
-  revalidatePath("/wishlist");
-  revalidatePath("/orders");
-  revalidatePath("/approvals");
+  revalidatePath("/groceries/wishlist");
+  revalidatePath("/groceries/orders");
+  revalidatePath("/groceries/approvals");
   return { success: true };
 }

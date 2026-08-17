@@ -20,8 +20,8 @@ export function BudgetForm({ currentBudget }: { currentBudget: number }) {
         id="amount"
         name="amount"
         type="number"
-        min={0}
-        step={50}
+        min={0.01}
+        step="any"
         required
         defaultValue={currentBudget || undefined}
         className="w-full rounded-md border border-border-strong px-2.5 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"

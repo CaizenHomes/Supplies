@@ -63,7 +63,9 @@ export type Database = {
           created_at: string
           id: string
           link: string | null
+          module: Database["public"]["Enums"]["item_module"]
           name: string
+          note: string | null
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
@@ -76,8 +78,9 @@ export type Database = {
           requested_at: string
           requested_by: string
           status: Database["public"]["Enums"]["item_status"]
-          unit_price: number
+          unit_price: number | null
           updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
           vendor: string
         }
         Insert: {
@@ -92,7 +95,9 @@ export type Database = {
           created_at?: string
           id?: string
           link?: string | null
+          module?: Database["public"]["Enums"]["item_module"]
           name: string
+          note?: string | null
           ordered_at?: string | null
           ordered_by?: string | null
           over_budget_reason?: string | null
@@ -105,8 +110,9 @@ export type Database = {
           requested_at?: string
           requested_by: string
           status?: Database["public"]["Enums"]["item_status"]
-          unit_price: number
+          unit_price?: number | null
           updated_at?: string
+          urgency?: Database["public"]["Enums"]["item_urgency"] | null
           vendor: string
         }
         Update: {
@@ -121,7 +127,9 @@ export type Database = {
           created_at?: string
           id?: string
           link?: string | null
+          module?: Database["public"]["Enums"]["item_module"]
           name?: string
+          note?: string | null
           ordered_at?: string | null
           ordered_by?: string | null
           over_budget_reason?: string | null
@@ -134,8 +142,9 @@ export type Database = {
           requested_at?: string
           requested_by?: string
           status?: Database["public"]["Enums"]["item_status"]
-          unit_price?: number
+          unit_price?: number | null
           updated_at?: string
+          urgency?: Database["public"]["Enums"]["item_urgency"] | null
           vendor?: string
         }
         Relationships: [
@@ -301,7 +310,9 @@ export type Database = {
           created_at: string | null
           id: string | null
           link: string | null
+          module: Database["public"]["Enums"]["item_module"] | null
           name: string | null
+          note: string | null
           ordered_at: string | null
           ordered_by: string | null
           ordered_by_name: string | null
@@ -321,6 +332,7 @@ export type Database = {
           total: number | null
           unit_price: number | null
           updated_at: string | null
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
           vendor: string | null
         }
         Relationships: [
@@ -391,7 +403,9 @@ export type Database = {
           created_at: string
           id: string
           link: string | null
+          module: Database["public"]["Enums"]["item_module"]
           name: string
+          note: string | null
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
@@ -404,8 +418,9 @@ export type Database = {
           requested_at: string
           requested_by: string
           status: Database["public"]["Enums"]["item_status"]
-          unit_price: number
+          unit_price: number | null
           updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
           vendor: string
         }
         SetofOptions: {
@@ -429,7 +444,9 @@ export type Database = {
           created_at: string
           id: string
           link: string | null
+          module: Database["public"]["Enums"]["item_module"]
           name: string
+          note: string | null
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
@@ -442,8 +459,58 @@ export type Database = {
           requested_at: string
           requested_by: string
           status: Database["public"]["Enums"]["item_status"]
-          unit_price: number
+          unit_price: number | null
           updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
+          vendor: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "items"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_supply_request: {
+        Args: {
+          p_link?: string
+          p_name: string
+          p_note?: string
+          p_qty: number
+          p_unit_price?: number
+          p_urgency?: Database["public"]["Enums"]["item_urgency"]
+          p_vendor: string
+        }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          budget_month: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          checked_at: string | null
+          checked_by: string | null
+          created_at: string
+          id: string
+          link: string | null
+          module: Database["public"]["Enums"]["item_module"]
+          name: string
+          note: string | null
+          ordered_at: string | null
+          ordered_by: string | null
+          over_budget_reason: string | null
+          promoted_at: string | null
+          promoted_by: string | null
+          qty: number
+          receipt_path: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          requested_at: string
+          requested_by: string
+          status: Database["public"]["Enums"]["item_status"]
+          unit_price: number | null
+          updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
           vendor: string
         }
         SetofOptions: {
@@ -458,7 +525,6 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
-      spent_this_month: { Args: never; Returns: number }
       mark_ordered: {
         Args: { p_item_id: string; p_receipt_path: string }
         Returns: {
@@ -473,7 +539,9 @@ export type Database = {
           created_at: string
           id: string
           link: string | null
+          module: Database["public"]["Enums"]["item_module"]
           name: string
+          note: string | null
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
@@ -486,8 +554,9 @@ export type Database = {
           requested_at: string
           requested_by: string
           status: Database["public"]["Enums"]["item_status"]
-          unit_price: number
+          unit_price: number | null
           updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
           vendor: string
         }
         SetofOptions: {
@@ -511,7 +580,9 @@ export type Database = {
           created_at: string
           id: string
           link: string | null
+          module: Database["public"]["Enums"]["item_module"]
           name: string
+          note: string | null
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
@@ -524,8 +595,9 @@ export type Database = {
           requested_at: string
           requested_by: string
           status: Database["public"]["Enums"]["item_status"]
-          unit_price: number
+          unit_price: number | null
           updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
           vendor: string
         }
         SetofOptions: {
@@ -549,7 +621,9 @@ export type Database = {
           created_at: string
           id: string
           link: string | null
+          module: Database["public"]["Enums"]["item_module"]
           name: string
+          note: string | null
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
@@ -562,8 +636,9 @@ export type Database = {
           requested_at: string
           requested_by: string
           status: Database["public"]["Enums"]["item_status"]
-          unit_price: number
+          unit_price: number | null
           updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
           vendor: string
         }
         SetofOptions: {
@@ -587,7 +662,9 @@ export type Database = {
           created_at: string
           id: string
           link: string | null
+          module: Database["public"]["Enums"]["item_module"]
           name: string
+          note: string | null
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
@@ -600,8 +677,9 @@ export type Database = {
           requested_at: string
           requested_by: string
           status: Database["public"]["Enums"]["item_status"]
-          unit_price: number
+          unit_price: number | null
           updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
           vendor: string
         }
         SetofOptions: {
@@ -611,8 +689,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      spent_this_month: { Args: never; Returns: number }
     }
     Enums: {
+      item_module: "groceries" | "supplies"
       item_status:
         | "wishlist"
         | "pending_approval"
@@ -621,6 +701,7 @@ export type Database = {
         | "received"
         | "rejected"
         | "cancelled"
+      item_urgency: "normal" | "urgent"
       notification_type: "wish_promoted" | "approval_needed" | "item_received"
       user_role: "executive" | "manager" | "staff"
     }
@@ -750,6 +831,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      item_module: ["groceries", "supplies"],
       item_status: [
         "wishlist",
         "pending_approval",
@@ -759,6 +841,7 @@ export const Constants = {
         "rejected",
         "cancelled",
       ],
+      item_urgency: ["normal", "urgent"],
       notification_type: ["wish_promoted", "approval_needed", "item_received"],
       user_role: ["executive", "manager", "staff"],
     },

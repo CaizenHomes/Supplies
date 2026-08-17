@@ -14,7 +14,7 @@ export default async function AdminPage() {
     redirect("/login");
   }
   if (profile.role !== "executive") {
-    redirect("/wishlist");
+    redirect("/groceries/wishlist");
   }
 
   const supabase = await createClient();

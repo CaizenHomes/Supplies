@@ -3,15 +3,15 @@ import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getBudgetSnapshot } from "@/lib/budget";
 import { formatCurrency } from "@/lib/format";
-import { ApprovalActions } from "./approval-actions";
+import { ApprovalActions } from "@/components/approvals/approval-actions";
 
-export default async function ApprovalsPage() {
+export default async function GroceriesApprovalsPage() {
   const profile = await getCurrentProfile();
   if (!profile) {
     redirect("/login");
   }
   if (profile.role !== "executive") {
-    redirect("/wishlist");
+    redirect("/groceries/wishlist");
   }
 
   const supabase = await createClient();
@@ -20,6 +20,7 @@ export default async function ApprovalsPage() {
     supabase
       .from("items_detailed")
       .select("*")
+      .eq("module", "groceries")
       .eq("status", "pending_approval")
       .order("promoted_at", { ascending: true }),
     getBudgetSnapshot(),

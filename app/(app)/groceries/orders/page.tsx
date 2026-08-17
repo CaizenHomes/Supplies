@@ -2,51 +2,54 @@ import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getReceiptSignedUrl } from "@/lib/receipts";
-import { formatCurrency, formatDate } from "@/lib/format";
-import { HistoryFilter } from "./history-filter";
+import { formatCurrency, initials } from "@/lib/format";
+import { MarkOrderedModal } from "@/components/orders/mark-ordered-modal";
+import { MarkReceivedModal } from "@/components/orders/mark-received-modal";
+import { CancelButton } from "@/components/orders/cancel-button";
 
-type HistoryStatus = "received" | "rejected" | "cancelled";
-const HISTORY_STATUSES: readonly HistoryStatus[] = ["received", "rejected", "cancelled"];
+const ORDER_STATUSES = ["in_list", "ordered"] as const;
 
-function isHistoryStatus(value: string | undefined): value is HistoryStatus {
-  return value === "received" || value === "rejected" || value === "cancelled";
-}
+const STATUS_ORDER: Record<string, number> = {
+  in_list: 0,
+  ordered: 1,
+};
 
 const STATUS_LABEL: Record<string, string> = {
-  received: "Received & verified",
-  rejected: "Rejected",
-  cancelled: "Cancelled",
+  in_list: "In list",
+  ordered: "Ordered",
 };
 
 const STATUS_CLASS: Record<string, string> = {
-  received: "bg-success-soft text-success",
-  rejected: "bg-danger-soft text-danger",
-  cancelled: "bg-bg text-text-muted",
+  in_list: "bg-info-soft text-info",
+  ordered: "bg-[#f4ebff] text-[#6941c6]",
 };
 
-export default async function HistoryPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ status?: string }>;
-}) {
+export default async function GroceriesOrdersPage() {
   const profile = await getCurrentProfile();
   if (!profile) {
     redirect("/login");
   }
 
-  const { status } = await searchParams;
-  const statusFilter = isHistoryStatus(status) ? status : null;
-  const statuses: readonly HistoryStatus[] = statusFilter ? [statusFilter] : HISTORY_STATUSES;
-
   const supabase = await createClient();
-  const { data: items } = await supabase
-    .from("items_detailed")
-    .select("*")
-    .in("status", statuses)
-    .order("updated_at", { ascending: false });
+  const canManage = profile.role === "manager" || profile.role === "executive";
 
-  const history = await Promise.all(
-    (items ?? []).map(async (item) => ({
+  const [{ data: items }, { data: activeProfiles }] = await Promise.all([
+    supabase
+      .from("items_detailed")
+      .select("*")
+      .eq("module", "groceries")
+      .in("status", ORDER_STATUSES),
+    supabase.from("profiles").select("id, full_name").eq("is_active", true).order("full_name"),
+  ]);
+
+  const sorted = (items ?? []).sort((a, b) => {
+    const statusDiff = (STATUS_ORDER[a.status ?? ""] ?? 99) - (STATUS_ORDER[b.status ?? ""] ?? 99);
+    if (statusDiff !== 0) return statusDiff;
+    return (b.promoted_at ?? "").localeCompare(a.promoted_at ?? "");
+  });
+
+  const orders = await Promise.all(
+    sorted.map(async (item) => ({
       ...item,
       receiptUrl: item.receipt_path ? await getReceiptSignedUrl(item.receipt_path) : null,
     })),
@@ -54,29 +57,17 @@ export default async function HistoryPage({
 
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-base font-semibold text-text">Order history</h1>
-          <p className="mt-0.5 text-sm text-text-muted">
-            Received and verified items, rejected requests, and cancelled orders.
-          </p>
-        </div>
-        {profile.role === "executive" && (
-          <a
-            href="/history/export"
-            className="rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg"
-          >
-            Export CSV
-          </a>
-        )}
+      <div className="mb-4">
+        <h1 className="text-base font-semibold text-text">Order list — this month</h1>
+        <p className="mt-0.5 text-sm text-text-muted">
+          Items approved to buy, ordered but not yet received, or awaiting verification.
+        </p>
       </div>
 
-      <HistoryFilter />
-
-      {history.length === 0 ? (
+      {orders.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border-strong bg-surface p-12 text-center text-text-muted">
-          <p className="mb-1 text-[15px] font-medium text-text">No history yet</p>
-          <p>Received, rejected, and cancelled items appear here.</p>
+          <p className="mb-1 text-[15px] font-medium text-text">Nothing on the order list yet</p>
+          <p>Move an item from the wishlist to start ordering it.</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
@@ -101,16 +92,15 @@ export default async function HistoryPage({
                 <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
                   Verified by
                 </th>
-                <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                  Completed
+                <th className="px-3.5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                  Actions
                 </th>
               </tr>
             </thead>
             <tbody>
-              {history.map((item) => {
+              {orders.map((item) => {
                 const total = (item.qty ?? 0) * (item.unit_price ?? 0);
-                const completedAt =
-                  item.checked_at ?? item.rejected_at ?? item.cancelled_at ?? item.requested_at;
+                const requesterName = item.requested_by_name ?? "Unknown";
                 const status = item.status ?? "";
 
                 return (
@@ -118,13 +108,24 @@ export default async function HistoryPage({
                     <td className="px-3.5 py-3">
                       <div className="font-medium text-text">{item.name}</div>
                       <div className="mt-0.5 text-xs text-text-muted">
-                        {item.vendor} · by {item.requested_by_name ?? "Unknown"}
+                        <span className="mr-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent-soft text-[10px] font-semibold text-accent">
+                          {initials(requesterName)}
+                        </span>
+                        {item.vendor} · wished by {requesterName}
+                        {item.link && (
+                          <>
+                            {" · "}
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-accent hover:underline"
+                            >
+                              🔗 link
+                            </a>
+                          </>
+                        )}
                       </div>
-                      {status === "cancelled" && item.cancellation_reason && (
-                        <div className="mt-0.5 text-xs text-text-subtle">
-                          Reason: {item.cancellation_reason}
-                        </div>
-                      )}
                     </td>
                     <td className="px-3.5 py-3 text-right tabular-nums">{item.qty}</td>
                     <td className="px-3.5 py-3 text-right font-semibold tabular-nums">
@@ -154,8 +155,22 @@ export default async function HistoryPage({
                     <td className="px-3.5 py-3 text-[12.5px] text-text">
                       {item.checked_by_name ?? <span className="text-xs text-text-subtle">—</span>}
                     </td>
-                    <td className="px-3.5 py-3 text-[12.5px] text-text-muted">
-                      {formatDate(completedAt)}
+                    <td className="px-3.5 py-3 text-right">
+                      {canManage ? (
+                        <div className="flex items-center justify-end gap-2">
+                          {status === "in_list" && <MarkOrderedModal itemId={item.id!} />}
+                          {status === "ordered" && (
+                            <MarkReceivedModal
+                              itemId={item.id!}
+                              currentUserId={profile.id}
+                              activeProfiles={activeProfiles ?? []}
+                            />
+                          )}
+                          <CancelButton itemId={item.id!} itemName={item.name ?? "this item"} />
+                        </div>
+                      ) : (
+                        <span className="text-xs text-text-subtle">—</span>
+                      )}
                     </td>
                   </tr>
                 );

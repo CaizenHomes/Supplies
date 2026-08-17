@@ -4,6 +4,20 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { receiptStoragePath } from "@/lib/receipts";
 
+// Shared by both the Groceries and Supplies Order List pages — the underlying RPCs
+// (mark_ordered/mark_received/cancel_item) are module-agnostic, so one copy of this
+// logic serves both. Revalidating both modules' paths unconditionally is cheap and
+// avoids needing an extra query just to know which module the item belongs to.
+function revalidateOrderPaths() {
+  revalidatePath("/groceries/orders");
+  revalidatePath("/supplies/orders");
+}
+
+function revalidateHistoryPaths() {
+  revalidatePath("/groceries/history");
+  revalidatePath("/supplies/history");
+}
+
 export type MarkOrderedActionState = {
   error?: string;
   success?: boolean;
@@ -40,7 +54,7 @@ export async function markOrdered(
     return { error: error.message };
   }
 
-  revalidatePath("/orders");
+  revalidateOrderPaths();
   return { success: true };
 }
 
@@ -70,8 +84,8 @@ export async function markReceived(
     return { error: error.message };
   }
 
-  revalidatePath("/orders");
-  revalidatePath("/history");
+  revalidateOrderPaths();
+  revalidateHistoryPaths();
   return { success: true };
 }
 
@@ -86,6 +100,6 @@ export async function cancelOrderItem(itemId: string, reason: string) {
     throw new Error(error.message);
   }
 
-  revalidatePath("/orders");
-  revalidatePath("/history");
+  revalidateOrderPaths();
+  revalidateHistoryPaths();
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { approveItem, rejectItem } from "./actions";
+import { approveItem, rejectItem } from "@/lib/actions/approval-actions";
 
 export function ApprovalActions({ itemId, itemName }: { itemId: string; itemName: string }) {
   const [isPending, startTransition] = useTransition();

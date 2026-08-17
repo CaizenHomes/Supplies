@@ -9,7 +9,7 @@ const OPTIONS = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
-export function HistoryFilter() {
+export function HistoryFilter({ basePath }: { basePath: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const current = searchParams.get("status") ?? "all";
@@ -22,7 +22,7 @@ export function HistoryFilter() {
     } else {
       params.set("status", value);
     }
-    router.push(`/history${params.toString() ? `?${params.toString()}` : ""}`);
+    router.push(`${basePath}${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
   return (

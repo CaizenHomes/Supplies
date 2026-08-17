@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { markReceived, type MarkReceivedActionState } from "./actions";
+import { markReceived, type MarkReceivedActionState } from "@/lib/actions/order-actions";
 
 const INITIAL_STATE: MarkReceivedActionState = {};
 

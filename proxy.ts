@@ -3,6 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login", "/auth/callback"];
 
+// Bookmarked links to the pre-restructure flat routes still need to land somewhere.
+const LEGACY_REDIRECTS: Record<string, string> = {
+  "/wishlist": "/groceries/wishlist",
+  "/orders": "/groceries/orders",
+  "/approvals": "/groceries/approvals",
+  "/history": "/groceries/history",
+  "/history/export": "/groceries/history/export",
+  "/supplies": "/supplies/requests",
+};
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -39,7 +49,14 @@ export async function proxy(request: NextRequest) {
 
   if (user && request.nextUrl.pathname === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/wishlist";
+    url.pathname = "/groceries/wishlist";
+    return NextResponse.redirect(url);
+  }
+
+  const legacyTarget = LEGACY_REDIRECTS[request.nextUrl.pathname];
+  if (legacyTarget) {
+    const url = request.nextUrl.clone();
+    url.pathname = legacyTarget;
     return NextResponse.redirect(url);
   }
 
