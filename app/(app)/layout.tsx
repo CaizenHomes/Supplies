@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { getCurrentProfile } from "@/lib/profile";
 import { getBudgetSnapshot } from "@/lib/budget";
 import { NavBar } from "@/components/nav-bar";
-import { NotificationBell } from "@/components/notification-bell";
 import { SignOutButton } from "@/components/sign-out-button";
 import { BudgetBar } from "@/components/budget-bar";
 
@@ -40,7 +39,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-4">
-            <NotificationBell />
             <span
               className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${ROLE_BADGE_CLASS[profile.role]}`}
             >
