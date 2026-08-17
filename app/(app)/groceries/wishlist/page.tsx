@@ -25,10 +25,6 @@ export default async function WishlistPage() {
   ]);
 
   const wishlist = items ?? [];
-  const cap = budget / 3;
-  const usedByMe = wishlist
-    .filter((item) => item.requested_by === profile.id)
-    .reduce((sum, item) => sum + (item.qty ?? 0) * (item.unit_price ?? 0), 0);
 
   const canManage = profile.role === "manager" || profile.role === "executive";
 
@@ -43,7 +39,7 @@ export default async function WishlistPage() {
               : "Snack items you and the team would like ordered. A manager moves items from here onto the order list."}
           </p>
         </div>
-        <AddWishModal role={profile.role} capAmount={cap} usedAmount={usedByMe} />
+        <AddWishModal />
       </div>
 
       {wishlist.length === 0 ? (

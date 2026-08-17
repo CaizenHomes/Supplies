@@ -2,17 +2,10 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { addWishlistItem, type AddWishActionState } from "./actions";
-import type { Enums } from "@/lib/types";
 
 const INITIAL_STATE: AddWishActionState = {};
 
-type AddWishModalProps = {
-  role: Enums<"user_role">;
-  capAmount: number;
-  usedAmount: number;
-};
-
-export function AddWishModal({ role, capAmount, usedAmount }: AddWishModalProps) {
+export function AddWishModal() {
   const [open, setOpen] = useState(false);
   const [qty, setQty] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
@@ -20,11 +13,7 @@ export function AddWishModal({ role, capAmount, usedAmount }: AddWishModalProps)
   const [handledState, setHandledState] = useState(state);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const isCapped = role === "staff";
   const itemTotal = (parseFloat(qty) || 0) * (parseFloat(unitPrice) || 0);
-  const projected = usedAmount + itemTotal;
-  const remaining = capAmount - projected;
-  const overCap = isCapped && projected > capAmount + 0.001;
 
   // Derived-state-during-render (react.dev/learn/you-might-not-need-an-effect): close the
   // modal and clear the live-total inputs the instant a submission succeeds, without an
@@ -156,37 +145,7 @@ export function AddWishModal({ role, capAmount, usedAmount }: AddWishModalProps)
                     <span>This item total</span>
                     <span>${itemTotal.toFixed(2)}</span>
                   </div>
-                  {isCapped && (
-                    <>
-                      <div className="flex justify-between py-0.5">
-                        <span>Your wishlist used</span>
-                        <span>${usedAmount.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between py-0.5">
-                        <span>Your allowance (1/3 of budget)</span>
-                        <span>${capAmount.toFixed(2)}</span>
-                      </div>
-                      <div
-                        className={`mt-1.5 flex justify-between border-t border-border pt-2 font-semibold ${
-                          overCap ? "text-danger" : ""
-                        }`}
-                      >
-                        <span>Allowance remaining after</span>
-                        <span>${remaining.toFixed(2)}</span>
-                      </div>
-                    </>
-                  )}
                 </div>
-
-                {overCap && (
-                  <div className="mb-3.5 rounded-md border border-[#fedd8a] bg-warning-soft px-3 py-2.5 text-[13px] text-warning">
-                    <div className="font-semibold">This exceeds your wishlist allowance</div>
-                    <div>
-                      Each team member can wish up to 1/3 of the monthly budget. Remove a wish or
-                      lower the amount to add this.
-                    </div>
-                  </div>
-                )}
 
                 {state.error && <p className="text-sm text-danger">{state.error}</p>}
               </div>
@@ -201,10 +160,10 @@ export function AddWishModal({ role, capAmount, usedAmount }: AddWishModalProps)
                 </button>
                 <button
                   type="submit"
-                  disabled={isPending || overCap}
+                  disabled={isPending}
                   className="rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {overCap ? "Over allowance" : isPending ? "Adding…" : "Add to wishlist"}
+                  {isPending ? "Adding…" : "Add to wishlist"}
                 </button>
               </div>
             </form>

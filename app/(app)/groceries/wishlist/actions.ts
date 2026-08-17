@@ -51,8 +51,6 @@ export async function addWishlistItem(
   });
 
   if (error) {
-    // Surfaces the DB trigger's own message verbatim for the 1/3-cap backstop,
-    // e.g. "This exceeds your wishlist allowance ($X.XX of $Y.YY used, this item adds $Z.ZZ)."
     return { error: error.message };
   }
 

@@ -27,8 +27,7 @@ export function BudgetForm({ currentBudget }: { currentBudget: number }) {
         className="w-full rounded-md border border-border-strong px-2.5 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
       />
       <p className="mt-1 text-xs text-text-muted">
-        Applies to the current month. Each staff member&rsquo;s wishlist allowance is 1/3 of
-        this. Changing it may push existing items over budget.
+        Applies to the current month. Changing it may push existing items over budget.
       </p>
 
       {state.error && <p className="mt-2 text-sm text-danger">{state.error}</p>}
