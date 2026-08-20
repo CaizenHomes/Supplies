@@ -89,6 +89,83 @@ export async function markReceived(
   return { success: true };
 }
 
+export type MarkOrderedBatchActionState = {
+  error?: string;
+  success?: boolean;
+};
+
+export async function markOrderedBatch(
+  _prevState: MarkOrderedBatchActionState,
+  formData: FormData,
+): Promise<MarkOrderedBatchActionState> {
+  const itemIds = formData.getAll("item_ids").map(String).filter(Boolean);
+  const file = formData.get("receipt");
+
+  if (itemIds.length === 0) {
+    return { error: "No items selected." };
+  }
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Please attach a receipt or PO." };
+  }
+
+  const supabase = await createClient();
+  const path = receiptStoragePath(itemIds[0], file.name);
+
+  const { error: uploadError } = await supabase.storage.from("receipts").upload(path, file, {
+    contentType: file.type || undefined,
+  });
+
+  if (uploadError) {
+    return { error: uploadError.message };
+  }
+
+  const { error } = await supabase.rpc("mark_ordered_batch", {
+    p_item_ids: itemIds,
+    p_receipt_path: path,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidateOrderPaths();
+  return { success: true };
+}
+
+export type MarkReceivedBatchActionState = {
+  error?: string;
+  success?: boolean;
+};
+
+export async function markReceivedBatch(
+  _prevState: MarkReceivedBatchActionState,
+  formData: FormData,
+): Promise<MarkReceivedBatchActionState> {
+  const itemIds = formData.getAll("item_ids").map(String).filter(Boolean);
+  const checkedBy = String(formData.get("checked_by") ?? "");
+
+  if (itemIds.length === 0) {
+    return { error: "No items selected." };
+  }
+  if (!checkedBy) {
+    return { error: "Select who verified the delivery." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("mark_received_batch", {
+    p_item_ids: itemIds,
+    p_checked_by: checkedBy,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidateOrderPaths();
+  revalidateHistoryPaths();
+  return { success: true };
+}
+
 export async function cancelOrderItem(itemId: string, reason: string) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("cancel_item", {

@@ -566,6 +566,47 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      mark_ordered_batch: {
+        Args: { p_item_ids: string[]; p_receipt_path: string }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          budget_month: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          checked_at: string | null
+          checked_by: string | null
+          created_at: string
+          id: string
+          link: string | null
+          module: Database["public"]["Enums"]["item_module"]
+          name: string
+          note: string | null
+          ordered_at: string | null
+          ordered_by: string | null
+          over_budget_reason: string | null
+          promoted_at: string | null
+          promoted_by: string | null
+          qty: number
+          receipt_path: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          requested_at: string
+          requested_by: string
+          status: Database["public"]["Enums"]["item_status"]
+          unit_price: number | null
+          updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
+          vendor: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       mark_received: {
         Args: { p_checked_by: string; p_item_id: string }
         Returns: {
@@ -605,6 +646,47 @@ export type Database = {
           to: "items"
           isOneToOne: true
           isSetofReturn: false
+        }
+      }
+      mark_received_batch: {
+        Args: { p_checked_by: string; p_item_ids: string[] }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          budget_month: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          checked_at: string | null
+          checked_by: string | null
+          created_at: string
+          id: string
+          link: string | null
+          module: Database["public"]["Enums"]["item_module"]
+          name: string
+          note: string | null
+          ordered_at: string | null
+          ordered_by: string | null
+          over_budget_reason: string | null
+          promoted_at: string | null
+          promoted_by: string | null
+          qty: number
+          receipt_path: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          requested_at: string
+          requested_by: string
+          status: Database["public"]["Enums"]["item_status"]
+          unit_price: number | null
+          updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
+          vendor: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "items"
+          isOneToOne: false
+          isSetofReturn: true
         }
       }
       promote_item: {
