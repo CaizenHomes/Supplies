@@ -1,4 +1,5 @@
 import { formatCurrency, formatDate } from "@/lib/format";
+import { buildReceiptRenderUnits } from "@/lib/receipt-groups";
 import type { Tables } from "@/lib/types";
 
 type HistoryRow = Tables<"items_detailed"> & { receiptUrl: string | null };
@@ -40,6 +41,62 @@ function groupByVendor(items: HistoryRow[]) {
     });
 }
 
+function itemRow(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } = {}) {
+  const total = rowTotal(item);
+  const completedAt = item.checked_at ?? item.rejected_at ?? item.cancelled_at ?? item.requested_at;
+  const status = item.status ?? "";
+
+  return (
+    <tr key={item.id} className="border-b border-border last:border-0 hover:bg-[#fafbfc]">
+      <td className="px-3.5 py-3">
+        <div className="font-medium text-text">
+          {item.name}
+          {item.urgency === "urgent" && (
+            <span className="ml-1.5 inline-block rounded-full bg-danger-soft px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-danger">
+              Urgent
+            </span>
+          )}
+        </div>
+        <div className="mt-0.5 text-xs text-text-muted">
+          {item.vendor} · by {item.requested_by_name ?? "Unknown"}
+        </div>
+        {status === "cancelled" && item.cancellation_reason && (
+          <div className="mt-0.5 text-xs text-text-subtle">Reason: {item.cancellation_reason}</div>
+        )}
+      </td>
+      <td className="px-3.5 py-3 text-right tabular-nums">{item.qty}</td>
+      <td className="px-3.5 py-3 text-right font-semibold tabular-nums">
+        {total === null ? <span className="text-xs font-normal text-text-subtle">—</span> : formatCurrency(total)}
+      </td>
+      <td className="px-3.5 py-3">
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[status] ?? "bg-bg text-text-muted"}`}
+        >
+          {STATUS_LABEL[status] ?? status}
+        </span>
+      </td>
+      <td className="px-3.5 py-3">
+        {!hideReceipt && item.receiptUrl ? (
+          <a
+            href={item.receiptUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-full border border-border bg-bg px-2 py-0.5 text-[11px] text-text-muted hover:border-accent hover:text-accent"
+          >
+            📎 view
+          </a>
+        ) : (
+          <span className="text-xs text-text-subtle">—</span>
+        )}
+      </td>
+      <td className="px-3.5 py-3 text-[12.5px] text-text">
+        {item.checked_by_name ?? <span className="text-xs text-text-subtle">—</span>}
+      </td>
+      <td className="px-3.5 py-3 text-[12.5px] text-text-muted">{formatDate(completedAt)}</td>
+    </tr>
+  );
+}
+
 export function HistoryTable({ items }: { items: HistoryRow[] }) {
   const groups = groupByVendor(items);
 
@@ -73,6 +130,8 @@ export function HistoryTable({ items }: { items: HistoryRow[] }) {
         </thead>
         <tbody>
           {groups.flatMap((group) => {
+            const units = buildReceiptRenderUnits(group.items, (item) => item.checked_at);
+
             const rows = [
               <tr key={`${group.vendor}__header`} className="border-b border-border bg-bg">
                 <td
@@ -82,69 +141,36 @@ export function HistoryTable({ items }: { items: HistoryRow[] }) {
                   {group.vendor}
                 </td>
               </tr>,
-              ...group.items.map((item) => {
-                const total = rowTotal(item);
-                const completedAt =
-                  item.checked_at ?? item.rejected_at ?? item.cancelled_at ?? item.requested_at;
-                const status = item.status ?? "";
+              ...units.flatMap((unit) => {
+                if (unit.kind === "row") {
+                  return [itemRow(unit.item)];
+                }
 
-                return (
-                  <tr key={item.id} className="border-b border-border last:border-0 hover:bg-[#fafbfc]">
-                    <td className="px-3.5 py-3">
-                      <div className="font-medium text-text">
-                        {item.name}
-                        {item.urgency === "urgent" && (
-                          <span className="ml-1.5 inline-block rounded-full bg-danger-soft px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-danger">
-                            Urgent
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-0.5 text-xs text-text-muted">
-                        {item.vendor} · by {item.requested_by_name ?? "Unknown"}
-                      </div>
-                      {status === "cancelled" && item.cancellation_reason && (
-                        <div className="mt-0.5 text-xs text-text-subtle">
-                          Reason: {item.cancellation_reason}
-                        </div>
+                const receiptUrl = unit.items.find((item) => item.receiptUrl)?.receiptUrl ?? null;
+                return [
+                  <tr key={`${unit.key}__sub-header`} className="border-b border-border bg-bg">
+                    <td
+                      colSpan={7}
+                      className="px-3.5 py-1 pl-7 text-[10.5px] font-medium normal-case text-text-muted"
+                    >
+                      Order · {formatDate(unit.date)}
+                      {receiptUrl && (
+                        <>
+                          {" · "}
+                          <a
+                            href={receiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-accent hover:underline"
+                          >
+                            📎 view receipt
+                          </a>
+                        </>
                       )}
                     </td>
-                    <td className="px-3.5 py-3 text-right tabular-nums">{item.qty}</td>
-                    <td className="px-3.5 py-3 text-right font-semibold tabular-nums">
-                      {total === null ? (
-                        <span className="text-xs font-normal text-text-subtle">—</span>
-                      ) : (
-                        formatCurrency(total)
-                      )}
-                    </td>
-                    <td className="px-3.5 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[status] ?? "bg-bg text-text-muted"}`}
-                      >
-                        {STATUS_LABEL[status] ?? status}
-                      </span>
-                    </td>
-                    <td className="px-3.5 py-3">
-                      {item.receiptUrl ? (
-                        <a
-                          href={item.receiptUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-full border border-border bg-bg px-2 py-0.5 text-[11px] text-text-muted hover:border-accent hover:text-accent"
-                        >
-                          📎 view
-                        </a>
-                      ) : (
-                        <span className="text-xs text-text-subtle">—</span>
-                      )}
-                    </td>
-                    <td className="px-3.5 py-3 text-[12.5px] text-text">
-                      {item.checked_by_name ?? <span className="text-xs text-text-subtle">—</span>}
-                    </td>
-                    <td className="px-3.5 py-3 text-[12.5px] text-text-muted">
-                      {formatDate(completedAt)}
-                    </td>
-                  </tr>
-                );
+                  </tr>,
+                  ...unit.items.map((item) => itemRow(item, { hideReceipt: true })),
+                ];
               }),
               <tr key={`${group.vendor}__subtotal`} className="border-b border-border bg-bg">
                 <td className="px-3.5 py-2 text-xs font-semibold text-text-muted">Subtotal</td>

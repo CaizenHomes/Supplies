@@ -1,29 +1,37 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { markReceived, type MarkReceivedActionState } from "@/lib/actions/order-actions";
+import { markReceivedBatch, type MarkReceivedBatchActionState } from "@/lib/actions/order-actions";
 
-const INITIAL_STATE: MarkReceivedActionState = {};
+const INITIAL_STATE: MarkReceivedBatchActionState = {};
 
 type ActiveProfile = { id: string; full_name: string };
 
-export function MarkReceivedModal({
-  itemId,
+export function MarkReceivedButton({
+  itemIds,
   currentUserId,
   activeProfiles,
+  label,
+  className,
+  onSuccess,
 }: {
-  itemId: string;
+  itemIds: string[];
   currentUserId: string;
   activeProfiles: ActiveProfile[];
+  label?: string;
+  className?: string;
+  onSuccess?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [state, formAction, isPending] = useActionState(markReceived, INITIAL_STATE);
+  const [state, formAction, isPending] = useActionState(markReceivedBatch, INITIAL_STATE);
   const [handledState, setHandledState] = useState(state);
+  const isGroup = itemIds.length > 1;
 
   if (state !== handledState) {
     setHandledState(state);
     if (state.success) {
       setOpen(false);
+      onSuccess?.();
     }
   }
 
@@ -32,9 +40,12 @@ export function MarkReceivedModal({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-xs font-medium text-text hover:bg-bg"
+        className={
+          className ??
+          "rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-xs font-medium text-text hover:bg-bg"
+        }
       >
-        Mark received
+        {label ?? "Mark received"}
       </button>
 
       {open && (
@@ -44,12 +55,17 @@ export function MarkReceivedModal({
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-surface shadow-md">
             <form action={formAction}>
-              <input type="hidden" name="item_id" value={itemId} />
+              {itemIds.map((id) => (
+                <input key={id} type="hidden" name="item_ids" value={id} />
+              ))}
 
               <div className="border-b border-border px-6 py-5">
-                <h2 className="text-[17px] font-semibold text-text">Mark as received & verified</h2>
+                <h2 className="text-[17px] font-semibold text-text">
+                  {isGroup ? `Mark ${itemIds.length} items` : "Mark as"} received &amp; verified
+                </h2>
                 <p className="mt-1 text-[13px] text-text-muted">
-                  Confirm the correct item arrived. This moves it to History.
+                  Confirm the correct item{isGroup ? "s" : ""} arrived. This moves{" "}
+                  {isGroup ? "them" : "it"} to History.
                 </p>
               </div>
 
@@ -89,7 +105,7 @@ export function MarkReceivedModal({
                   disabled={isPending}
                   className="rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isPending ? "Confirming…" : "Confirm receipt"}
+                  {isPending ? "Confirming…" : isGroup ? `Confirm ${itemIds.length} received` : "Confirm receipt"}
                 </button>
               </div>
             </form>
