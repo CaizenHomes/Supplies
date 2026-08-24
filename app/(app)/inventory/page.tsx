@@ -32,8 +32,18 @@ export default async function InventoryPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <MonthlyChart title="Groceries — last 12 months" data={monthlyGroceries} />
-        <MonthlyChart title="Supplies — last 12 months" data={monthlySupplies} />
+        <MonthlyChart
+          title="Groceries — last 12 months"
+          module="groceries"
+          groceriesData={monthlyGroceries}
+          suppliesData={monthlySupplies}
+        />
+        <MonthlyChart
+          title="Supplies — last 12 months"
+          module="supplies"
+          groceriesData={monthlyGroceries}
+          suppliesData={monthlySupplies}
+        />
       </div>
 
       <div>
