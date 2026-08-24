@@ -54,6 +54,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               {ROLE_LABEL[profile.role]}
             </span>
             <span className="text-sm text-text-muted">{profile.full_name}</span>
+            {(profile.role === "executive" || profile.role === "manager") && (
+              <Link
+                href="/inventory"
+                className="text-sm font-medium text-text-muted hover:text-text"
+              >
+                Inventory
+              </Link>
+            )}
             {profile.role === "executive" && (
               <Link
                 href="/admin"
