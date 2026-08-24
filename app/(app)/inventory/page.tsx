@@ -3,6 +3,7 @@ import { getCurrentProfile } from "@/lib/profile";
 import { getInventoryData, type ModuleTotals } from "@/lib/inventory";
 import { formatCurrency } from "@/lib/format";
 import { MonthlyChart } from "@/components/inventory/monthly-chart";
+import { MonthlyBreakdownTable } from "@/components/inventory/monthly-breakdown-table";
 
 export default async function InventoryPage() {
   const profile = await getCurrentProfile();
@@ -13,7 +14,8 @@ export default async function InventoryPage() {
     redirect("/groceries/wishlist");
   }
 
-  const { thisMonth, ytd, monthlyGroceries, monthlySupplies, topVendors } = await getInventoryData();
+  const { thisMonth, ytd, monthlyGroceries, monthlySupplies, monthlyBreakdown } =
+    await getInventoryData();
 
   return (
     <section className="flex flex-col gap-8">
@@ -35,37 +37,8 @@ export default async function InventoryPage() {
       </div>
 
       <div>
-        <h2 className="mb-3 text-base font-semibold text-text">Top 5 vendors (all-time)</h2>
-        {topVendors.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border-strong bg-surface p-8 text-center text-text-muted">
-            No received orders yet.
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-[#fafbfc]">
-                  <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                    Vendor
-                  </th>
-                  <th className="px-3.5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                    Total spend
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {topVendors.map((vendor) => (
-                  <tr key={vendor.vendor} className="border-b border-border last:border-0">
-                    <td className="px-3.5 py-3 font-medium text-text">{vendor.vendor}</td>
-                    <td className="px-3.5 py-3 text-right font-semibold tabular-nums text-text">
-                      {formatCurrency(vendor.total)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <h2 className="mb-3 text-base font-semibold text-text">Monthly breakdown</h2>
+        <MonthlyBreakdownTable rows={monthlyBreakdown} />
       </div>
     </section>
   );

@@ -1,6 +1,16 @@
 import { formatCurrency } from "@/lib/format";
 import type { MonthPoint } from "@/lib/inventory";
 
+const FULL_MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function fullMonthLabel(key: string): string {
+  const [year, month] = key.split("-").map(Number);
+  return `${FULL_MONTH_NAMES[month - 1]} ${year}`;
+}
+
 export function MonthlyChart({ title, data }: { title: string; data: MonthPoint[] }) {
   const max = Math.max(...data.map((point) => point.total), 1);
 
@@ -11,7 +21,7 @@ export function MonthlyChart({ title, data }: { title: string; data: MonthPoint[
         {data.map((point) => (
           <div
             key={point.key}
-            title={`${point.label}: ${formatCurrency(point.total)}`}
+            title={`${fullMonthLabel(point.key)}: ${formatCurrency(point.total)}`}
             className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
           >
             <div
