@@ -1,19 +1,11 @@
-import { redirect } from "next/navigation";
-import { getCurrentProfile } from "@/lib/profile";
 import { getInventoryData, type ModuleTotals } from "@/lib/inventory";
 import { formatCurrency } from "@/lib/format";
 import { MonthlyChart } from "@/components/inventory/monthly-chart";
 import { MonthlyBreakdownTable } from "@/components/inventory/monthly-breakdown-table";
 
 export default async function InventoryPage() {
-  const profile = await getCurrentProfile();
-  if (!profile) {
-    redirect("/login");
-  }
-  if (profile.role !== "executive" && profile.role !== "manager") {
-    redirect("/groceries/wishlist");
-  }
-
+  // Role gate lives in the shared inventory layout — anyone who reaches this page has
+  // already been confirmed manager/executive.
   const { thisMonth, ytd, monthlyGroceries, monthlySupplies, monthlyBreakdown } =
     await getInventoryData();
 

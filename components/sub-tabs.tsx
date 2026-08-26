@@ -8,6 +8,9 @@ export type SubTabLink = {
   label: string;
   hidden?: boolean;
   badge?: number;
+  // Set when this href would otherwise be a path prefix of a sibling tab's href (e.g.
+  // "/inventory" vs "/inventory/products") — startsWith matching would mark both active.
+  exact?: boolean;
 };
 
 export function SubTabs({ links }: { links: SubTabLink[] }) {
@@ -17,7 +20,7 @@ export function SubTabs({ links }: { links: SubTabLink[] }) {
   return (
     <nav className="flex gap-1 border-t border-border px-8">
       {visible.map((link) => {
-        const active = pathname.startsWith(link.href);
+        const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
         return (
           <Link
             key={link.href}
