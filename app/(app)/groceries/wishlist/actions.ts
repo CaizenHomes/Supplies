@@ -29,6 +29,9 @@ export async function addWishlistItem(
   const qty = Number(formData.get("qty"));
   const unitPrice = Number(formData.get("unit_price"));
   const link = normalizeLink(String(formData.get("link") ?? ""));
+  const productIdRaw = String(formData.get("product_id") ?? "").trim();
+  const productId = productIdRaw === "" ? null : productIdRaw;
+  const productName = String(formData.get("product_name") ?? "").trim();
 
   if (!name || !vendor) {
     return { error: "Name and vendor are required." };
@@ -40,14 +43,14 @@ export async function addWishlistItem(
     return { error: "Unit price must be greater than 0." };
   }
 
-  const { error } = await supabase.from("items").insert({
-    name,
-    vendor,
-    qty,
-    unit_price: unitPrice,
-    link,
-    requested_by: user.id,
-    status: "wishlist",
+  const { error } = await supabase.rpc("add_wishlist_item", {
+    p_name: name,
+    p_vendor: vendor,
+    p_qty: qty,
+    p_unit_price: unitPrice,
+    p_link: link ?? undefined,
+    p_product_id: productId ?? undefined,
+    p_product_name: productName || undefined,
   });
 
   if (error) {

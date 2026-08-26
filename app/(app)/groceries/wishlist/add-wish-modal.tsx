@@ -2,11 +2,15 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { addWishlistItem, type AddWishActionState } from "./actions";
+import { ProductCombobox, type Product } from "@/components/product-combobox";
 
 const INITIAL_STATE: AddWishActionState = {};
 
-export function AddWishModal() {
+export function AddWishModal({ canManage }: { canManage: boolean }) {
   const [open, setOpen] = useState(false);
+  const [productName, setProductName] = useState("");
+  const [productId, setProductId] = useState<string | null>(null);
+  const [vendor, setVendor] = useState("");
   const [qty, setQty] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
   const [state, formAction, isPending] = useActionState(addWishlistItem, INITIAL_STATE);
@@ -24,16 +28,29 @@ export function AddWishModal() {
       setOpen(false);
       setQty("1");
       setUnitPrice("");
+      setVendor("");
+      setProductName("");
+      setProductId(null);
     }
   }
 
-  // Resetting the uncontrolled fields (name/vendor/link) is a real DOM mutation, so it
-  // belongs in an Effect — but it doesn't call setState, so it doesn't trip the same rule.
+  // Resetting the uncontrolled fields (link) is a real DOM mutation, so it belongs in an
+  // Effect — but it doesn't call setState, so it doesn't trip the same rule.
   useEffect(() => {
     if (state.success) {
       formRef.current?.reset();
     }
   }, [state]);
+
+  // Selecting a catalog product fills in what it knows (blank if the product doesn't
+  // have a default) — the user can still edit either field afterward. Quantity and link
+  // are deliberately left untouched: qty is whatever the user already set, and product
+  // URLs vary per shopping trip so there's no sensible default to pull in.
+  function handleProductSelect(product: Product) {
+    setProductId(product.id);
+    setVendor(product.default_vendor ?? "");
+    setUnitPrice(product.default_unit_price != null ? String(product.default_unit_price) : "");
+  }
 
   return (
     <>
@@ -64,14 +81,20 @@ export function AddWishModal() {
                   <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-text">
                     Item name
                   </label>
-                  <input
+                  <ProductCombobox
                     id="name"
-                    name="name"
-                    type="text"
-                    required
+                    value={productName}
+                    onChange={(value) => {
+                      setProductName(value);
+                      setProductId(null);
+                    }}
+                    onProductSelect={handleProductSelect}
                     placeholder="e.g. Kirkland coffee beans, 3lb"
-                    className="w-full rounded-md border border-border-strong px-2.5 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+                    canCreateProducts={canManage}
                   />
+                  <input type="hidden" name="name" value={productName} />
+                  <input type="hidden" name="product_id" value={productId ?? ""} />
+                  <input type="hidden" name="product_name" value={productName} />
                 </div>
 
                 <div className="mb-3.5 grid grid-cols-2 gap-3">
@@ -84,6 +107,8 @@ export function AddWishModal() {
                       name="vendor"
                       type="text"
                       required
+                      value={vendor}
+                      onChange={(event) => setVendor(event.target.value)}
                       placeholder="Costco, Amazon…"
                       className="w-full rounded-md border border-border-strong px-2.5 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
                     />

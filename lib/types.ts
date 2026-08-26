@@ -14,7 +14,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -69,6 +69,7 @@ export type Database = {
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           qty: number
@@ -101,6 +102,7 @@ export type Database = {
           ordered_at?: string | null
           ordered_by?: string | null
           over_budget_reason?: string | null
+          product_id?: string | null
           promoted_at?: string | null
           promoted_by?: string | null
           qty: number
@@ -133,6 +135,7 @@ export type Database = {
           ordered_at?: string | null
           ordered_by?: string | null
           over_budget_reason?: string | null
+          product_id?: string | null
           promoted_at?: string | null
           promoted_by?: string | null
           qty?: number
@@ -174,6 +177,13 @@ export type Database = {
             columns: ["ordered_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {
@@ -251,6 +261,50 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          barcode: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          default_unit_price: number | null
+          default_vendor: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          barcode?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_unit_price?: number | null
+          default_vendor?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_unit_price?: number | null
+          default_vendor?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -317,6 +371,7 @@ export type Database = {
           ordered_by: string | null
           ordered_by_name: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           promoted_by_name: string | null
@@ -365,6 +420,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "items_promoted_by_fkey"
             columns: ["promoted_by"]
             isOneToOne: false
@@ -389,6 +451,56 @@ export type Database = {
       }
     }
     Functions: {
+      add_wishlist_item: {
+        Args: {
+          p_link?: string
+          p_name: string
+          p_product_id?: string
+          p_product_name?: string
+          p_qty: number
+          p_unit_price: number
+          p_vendor: string
+        }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          budget_month: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          checked_at: string | null
+          checked_by: string | null
+          created_at: string
+          id: string
+          link: string | null
+          module: Database["public"]["Enums"]["item_module"]
+          name: string
+          note: string | null
+          ordered_at: string | null
+          ordered_by: string | null
+          over_budget_reason: string | null
+          product_id: string | null
+          promoted_at: string | null
+          promoted_by: string | null
+          qty: number
+          receipt_path: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          requested_at: string
+          requested_by: string
+          status: Database["public"]["Enums"]["item_status"]
+          unit_price: number | null
+          updated_at: string
+          urgency: Database["public"]["Enums"]["item_urgency"] | null
+          vendor: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "items"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       approve_item: {
         Args: { p_item_id: string }
         Returns: {
@@ -409,6 +521,7 @@ export type Database = {
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           qty: number
@@ -450,6 +563,7 @@ export type Database = {
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           qty: number
@@ -476,6 +590,8 @@ export type Database = {
           p_link?: string
           p_name: string
           p_note?: string
+          p_product_id?: string
+          p_product_name?: string
           p_qty: number
           p_unit_price?: number
           p_urgency?: Database["public"]["Enums"]["item_urgency"]
@@ -499,6 +615,7 @@ export type Database = {
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           qty: number
@@ -545,6 +662,7 @@ export type Database = {
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           qty: number
@@ -586,6 +704,7 @@ export type Database = {
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           qty: number
@@ -627,6 +746,7 @@ export type Database = {
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           qty: number
@@ -668,6 +788,7 @@ export type Database = {
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           qty: number
@@ -709,6 +830,7 @@ export type Database = {
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           qty: number
@@ -750,6 +872,7 @@ export type Database = {
           ordered_at: string | null
           ordered_by: string | null
           over_budget_reason: string | null
+          product_id: string | null
           promoted_at: string | null
           promoted_by: string | null
           qty: number
@@ -770,6 +893,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      resolve_product_id: {
+        Args: {
+          p_product_id: string
+          p_product_name: string
+          p_unit_price: number
+          p_vendor: string
+        }
+        Returns: string
       }
       spent_this_month: { Args: never; Returns: number }
     }

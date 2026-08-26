@@ -39,7 +39,7 @@ export default async function WishlistPage() {
               : "Snack items you and the team would like ordered. A manager moves items from here onto the order list."}
           </p>
         </div>
-        <AddWishModal />
+        <AddWishModal canManage={canManage} />
       </div>
 
       {wishlist.length === 0 ? (

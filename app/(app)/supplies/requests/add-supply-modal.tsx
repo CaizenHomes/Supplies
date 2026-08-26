@@ -3,11 +3,15 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { addSupplyRequest, type AddSupplyActionState } from "./actions";
 import type { Enums } from "@/lib/types";
+import { ProductCombobox, type Product } from "@/components/product-combobox";
 
 const INITIAL_STATE: AddSupplyActionState = {};
 
 export function AddSupplyModal({ role }: { role: Enums<"user_role"> }) {
   const [open, setOpen] = useState(false);
+  const [productName, setProductName] = useState("");
+  const [productId, setProductId] = useState<string | null>(null);
+  const [vendor, setVendor] = useState("");
   const [qty, setQty] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
   const [state, formAction, isPending] = useActionState(addSupplyRequest, INITIAL_STATE);
@@ -15,6 +19,7 @@ export function AddSupplyModal({ role }: { role: Enums<"user_role"> }) {
   const formRef = useRef<HTMLFormElement>(null);
 
   const isExecutive = role === "executive";
+  const canCreateProducts = role === "manager" || role === "executive";
   const qtyNum = parseFloat(qty) || 0;
   const priceNum = parseFloat(unitPrice);
   const itemTotal = priceNum > 0 && qtyNum > 0 ? qtyNum * priceNum : null;
@@ -25,6 +30,9 @@ export function AddSupplyModal({ role }: { role: Enums<"user_role"> }) {
       setOpen(false);
       setQty("1");
       setUnitPrice("");
+      setVendor("");
+      setProductName("");
+      setProductId(null);
     }
   }
 
@@ -33,6 +41,16 @@ export function AddSupplyModal({ role }: { role: Enums<"user_role"> }) {
       formRef.current?.reset();
     }
   }, [state]);
+
+  // Selecting a catalog product fills in what it knows (blank if the product doesn't
+  // have a default) — the user can still edit either field afterward. Quantity and link
+  // are deliberately left untouched: qty is whatever the user already set, and product
+  // URLs vary per shopping trip so there's no sensible default to pull in.
+  function handleProductSelect(product: Product) {
+    setProductId(product.id);
+    setVendor(product.default_vendor ?? "");
+    setUnitPrice(product.default_unit_price != null ? String(product.default_unit_price) : "");
+  }
 
   return (
     <>
@@ -64,14 +82,20 @@ export function AddSupplyModal({ role }: { role: Enums<"user_role"> }) {
                   <label htmlFor="s-name" className="mb-1.5 block text-sm font-medium text-text">
                     Item name
                   </label>
-                  <input
+                  <ProductCombobox
                     id="s-name"
-                    name="name"
-                    type="text"
-                    required
+                    value={productName}
+                    onChange={(value) => {
+                      setProductName(value);
+                      setProductId(null);
+                    }}
+                    onProductSelect={handleProductSelect}
                     placeholder="e.g. Hi-vis safety vests — CSA Class 2"
-                    className="w-full rounded-md border border-border-strong px-2.5 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
+                    canCreateProducts={canCreateProducts}
                   />
+                  <input type="hidden" name="name" value={productName} />
+                  <input type="hidden" name="product_id" value={productId ?? ""} />
+                  <input type="hidden" name="product_name" value={productName} />
                 </div>
 
                 <div className="mb-3.5 grid grid-cols-2 gap-3">
@@ -84,6 +108,8 @@ export function AddSupplyModal({ role }: { role: Enums<"user_role"> }) {
                       name="vendor"
                       type="text"
                       required
+                      value={vendor}
+                      onChange={(event) => setVendor(event.target.value)}
                       placeholder="Acklands-Grainger, Amazon, Staples…"
                       className="w-full rounded-md border border-border-strong px-2.5 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
                     />

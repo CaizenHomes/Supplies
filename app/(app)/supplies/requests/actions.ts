@@ -27,6 +27,9 @@ export async function addSupplyRequest(
   const link = normalizeLink(String(formData.get("link") ?? ""));
   const note = String(formData.get("note") ?? "").trim();
   const urgency = String(formData.get("urgency") ?? "normal") as Enums<"item_urgency">;
+  const productIdRaw = String(formData.get("product_id") ?? "").trim();
+  const productId = productIdRaw === "" ? null : productIdRaw;
+  const productName = String(formData.get("product_name") ?? "").trim();
 
   if (!name || !vendor) {
     return { error: "Name and vendor are required." };
@@ -50,6 +53,8 @@ export async function addSupplyRequest(
     p_link: link ?? undefined,
     p_note: note,
     p_urgency: urgency,
+    p_product_id: productId ?? undefined,
+    p_product_name: productName || undefined,
   });
 
   if (error) {
