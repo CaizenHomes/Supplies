@@ -127,6 +127,8 @@ export function OrderTable({
                       <>
                         <MarkReceivedButton
                           itemIds={[unit.item.id!]}
+                          itemName={unit.item.name ?? undefined}
+                          module={module}
                           currentUserId={currentUserId}
                           activeProfiles={activeProfiles}
                         />
@@ -330,6 +332,7 @@ function GroupRows({
           {canManage && (
             <MarkReceivedButton
               itemIds={itemIds}
+              module={module}
               currentUserId={currentUserId}
               activeProfiles={activeProfiles}
               label="Mark received"
