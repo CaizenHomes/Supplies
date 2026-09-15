@@ -73,7 +73,7 @@ export default function LoginPage() {
               disabled={status === "sending"}
               className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {status === "sending" ? "Sending…" : "Send magic link"}
+              {status === "sending" ? "Sending…" : "Send login link"}
             </button>
           </form>
         )}
