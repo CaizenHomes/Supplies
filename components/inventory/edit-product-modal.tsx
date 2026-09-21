@@ -43,18 +43,18 @@ export function EditProductModal({ product }: { product: Product }) {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(16,24,40,0.4)] p-3 sm:p-5"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(16,24,40,0.4)] p-modal-backdrop py-6 sm:items-center sm:p-modal-backdrop-lg"
           onClick={(event) => event.target === event.currentTarget && setOpen(false)}
         >
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-surface shadow-md">
+          <div className="w-full max-w-md rounded-xl bg-surface shadow-md sm:max-h-[90vh] sm:overflow-y-auto">
             <form action={formAction} onSubmit={handleSubmit}>
               <input type="hidden" name="product_id" value={product.id} />
 
-              <div className="border-b border-border px-4 py-5 sm:px-6">
+              <div className="border-b border-border px-modal-pad py-5 sm:px-modal-pad-lg">
                 <h2 className="text-[17px] font-semibold text-text">Edit product</h2>
               </div>
 
-              <div className="px-4 py-5 sm:px-6">
+              <div className="px-modal-pad py-5 sm:px-modal-pad-lg">
                 <div className="mb-3.5">
                   <label htmlFor="p-name" className="mb-1.5 block text-sm font-medium text-text">
                     Name
@@ -131,7 +131,7 @@ export function EditProductModal({ product }: { product: Product }) {
                 {state.error && <p className="text-sm text-danger">{state.error}</p>}
               </div>
 
-              <div className="flex flex-col-reverse justify-end gap-2 rounded-b-xl border-t border-border bg-[#fafbfc] px-4 py-3.5 sm:flex-row sm:px-6">
+              <div className="flex flex-col-reverse justify-end gap-2 rounded-b-xl border-t border-border bg-[#fafbfc] px-modal-pad py-3.5 sm:flex-row sm:px-modal-pad-lg">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}

@@ -22,6 +22,20 @@
   --color-info-soft: #eff4ff;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+
+  /* Mobile-responsive spacing scale — named for what they mean (touch target, page
+     gutter, modal padding) rather than a raw number, so the mobile pass reaches for the
+     same values instead of picking new ones. Keys under --spacing-* extend Tailwind's
+     default scale, so each one is usable directly as a utility (e.g. min-h-touch,
+     px-gutter, p-modal-pad). "-lg" variants are the original desktop values, applied
+     behind an sm: prefix so desktop layout is byte-for-byte unchanged. */
+  --spacing-touch: 2.75rem; /* 44px — minimum mobile tap target (WCAG 2.5.5) */
+  --spacing-gutter: 1rem; /* 16px — mobile page/section side padding */
+  --spacing-gutter-lg: 2rem; /* 32px — desktop page/section side padding */
+  --spacing-modal-pad: 1rem; /* 16px — mobile modal section padding */
+  --spacing-modal-pad-lg: 1.5rem; /* 24px — desktop modal section padding */
+  --spacing-modal-backdrop: 0.75rem; /* 12px — mobile modal backdrop padding */
+  --spacing-modal-backdrop-lg: 1.25rem; /* 20px — desktop modal backdrop padding */
 }
 
 body {

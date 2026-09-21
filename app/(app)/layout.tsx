@@ -37,7 +37,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <header className="sticky top-0 z-10 border-b border-border bg-surface">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 sm:gap-4 sm:px-8">
+        <div className="flex items-center justify-between gap-3 px-gutter py-3 sm:px-gutter-lg">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent text-sm font-bold text-white">
               C
@@ -47,7 +47,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             </span>
           </div>
 
-          <ModuleSwitcher groceriesPending={groceriesPending} suppliesPending={suppliesPending} />
+          {/* Desktop only — same component also renders below, full-width, for mobile
+              (see the second row). Splitting it out is what keeps the top row from
+              wrapping: without its own row, the switcher plus the right-hand user zone
+              don't fit in ~360px for executive/manager accounts (Inventory + Admin +
+              Sign out links pile up), so the header used to wrap unpredictably into 2-3
+              competing rows. */}
+          <div className="hidden sm:block">
+            <ModuleSwitcher groceriesPending={groceriesPending} suppliesPending={suppliesPending} />
+          </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
             <span
@@ -61,7 +69,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             {(profile.role === "executive" || profile.role === "manager") && (
               <Link
                 href="/inventory"
-                className="flex min-h-11 items-center text-sm font-medium text-text-muted hover:text-text sm:min-h-0"
+                className="flex min-h-touch items-center text-sm font-medium text-text-muted hover:text-text sm:min-h-0"
               >
                 Inventory
               </Link>
@@ -69,7 +77,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             {profile.role === "executive" && (
               <Link
                 href="/admin"
-                className="flex min-h-11 items-center text-sm font-medium text-text-muted hover:text-text sm:min-h-0"
+                className="flex min-h-touch items-center text-sm font-medium text-text-muted hover:text-text sm:min-h-0"
               >
                 Admin
               </Link>
@@ -77,9 +85,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <SignOutButton />
           </div>
         </div>
+
+        {/* Mobile only — the module switcher gets the full row width to itself instead of
+            competing with the logo and user zone above. */}
+        <div className="flex justify-center border-t border-border px-gutter py-2 sm:hidden">
+          <ModuleSwitcher groceriesPending={groceriesPending} suppliesPending={suppliesPending} />
+        </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-gutter py-6 sm:px-gutter-lg">{children}</main>
     </div>
   );
 }

@@ -260,11 +260,11 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(16,24,40,0.6)] p-3 sm:p-5"
+      className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-[rgba(16,24,40,0.6)] p-modal-backdrop py-6 sm:items-center sm:p-modal-backdrop-lg"
       onClick={(event) => event.target === event.currentTarget && onClose()}
     >
-      <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl bg-surface shadow-md">
-        <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-6">
+      <div className="flex max-h-[90dvh] w-full max-w-md flex-col overflow-hidden rounded-xl bg-surface shadow-md sm:max-h-[90vh]">
+        <div className="flex items-center justify-between border-b border-border px-modal-pad py-4 sm:px-modal-pad-lg">
           <h2 className="text-[17px] font-semibold text-text">Scan barcode</h2>
           <button
             type="button"
@@ -276,7 +276,7 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
           </button>
         </div>
 
-        <div className="overflow-y-auto px-4 py-5 sm:px-6">
+        <div className="overflow-y-auto px-modal-pad py-5 sm:px-modal-pad-lg">
           {result === null && scanMode === "camera" && (
             <CameraStep videoRef={videoRef} error={cameraError} />
           )}
@@ -436,7 +436,7 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
           )}
         </div>
 
-        <div className="border-t border-border bg-[#fafbfc] px-4 py-3 text-xs text-text-muted sm:px-6">
+        <div className="border-t border-border bg-[#fafbfc] px-modal-pad py-3 text-xs text-text-muted sm:px-modal-pad-lg">
           Scanner requires camera permission. Works best on mobile.
         </div>
       </div>

@@ -64,19 +64,19 @@ export function AddWishModal({ canManage }: { canManage: boolean }) {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(16,24,40,0.4)] p-5"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(16,24,40,0.4)] p-modal-backdrop py-6 sm:items-center sm:p-modal-backdrop-lg"
           onClick={(event) => event.target === event.currentTarget && setOpen(false)}
         >
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-surface shadow-md">
+          <div className="w-full max-w-md rounded-xl bg-surface shadow-md sm:max-h-[90vh] sm:overflow-y-auto">
             <form ref={formRef} action={formAction}>
-              <div className="border-b border-border px-6 py-5">
+              <div className="border-b border-border px-modal-pad py-5 sm:px-modal-pad-lg">
                 <h2 className="text-[17px] font-semibold text-text">Add to wishlist</h2>
                 <p className="mt-1 text-[13px] text-text-muted">
                   Add a snack item you&rsquo;d like ordered this month.
                 </p>
               </div>
 
-              <div className="px-6 py-5">
+              <div className="px-modal-pad py-5 sm:px-modal-pad-lg">
                 <div className="mb-3.5">
                   <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-text">
                     Item name
@@ -97,7 +97,7 @@ export function AddWishModal({ canManage }: { canManage: boolean }) {
                   <input type="hidden" name="product_name" value={productName} />
                 </div>
 
-                <div className="mb-3.5 grid grid-cols-2 gap-3">
+                <div className="mb-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label htmlFor="vendor" className="mb-1.5 block text-sm font-medium text-text">
                       Vendor
@@ -175,18 +175,18 @@ export function AddWishModal({ canManage }: { canManage: boolean }) {
                 {state.error && <p className="text-sm text-danger">{state.error}</p>}
               </div>
 
-              <div className="flex justify-end gap-2 rounded-b-xl border-t border-border bg-[#fafbfc] px-6 py-3.5">
+              <div className="flex flex-col-reverse gap-2 rounded-b-xl border-t border-border bg-[#fafbfc] px-modal-pad py-3.5 sm:flex-row sm:justify-end sm:px-modal-pad-lg">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg"
+                  className="w-full rounded-md border border-border-strong bg-surface px-3.5 py-3 text-sm font-medium text-text hover:bg-bg sm:w-auto sm:py-2"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:py-2"
                 >
                   {isPending ? "Adding…" : "Add to wishlist"}
                 </button>
