@@ -37,27 +37,31 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <header className="sticky top-0 z-10 border-b border-border bg-surface">
-        <div className="flex items-center justify-between gap-4 px-8 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 sm:gap-4 sm:px-8">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-sm font-bold text-white">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent text-sm font-bold text-white">
               C
             </div>
-            <span className="text-[15px] font-semibold text-text">CaizenX Supplies</span>
+            <span className="hidden text-[15px] font-semibold text-text sm:inline">
+              CaizenX Supplies
+            </span>
           </div>
 
           <ModuleSwitcher groceriesPending={groceriesPending} suppliesPending={suppliesPending} />
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <span
-              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${ROLE_BADGE_CLASS[profile.role]}`}
+              title={ROLE_LABEL[profile.role]}
+              className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold uppercase sm:h-auto sm:w-auto sm:rounded-full sm:px-2 sm:py-0.5 sm:tracking-wide ${ROLE_BADGE_CLASS[profile.role]}`}
             >
-              {ROLE_LABEL[profile.role]}
+              <span className="sm:hidden">{ROLE_LABEL[profile.role].charAt(0)}</span>
+              <span className="hidden sm:inline">{ROLE_LABEL[profile.role]}</span>
             </span>
-            <span className="text-sm text-text-muted">{profile.full_name}</span>
+            <span className="hidden text-sm text-text-muted sm:inline">{profile.full_name}</span>
             {(profile.role === "executive" || profile.role === "manager") && (
               <Link
                 href="/inventory"
-                className="text-sm font-medium text-text-muted hover:text-text"
+                className="flex min-h-11 items-center text-sm font-medium text-text-muted hover:text-text sm:min-h-0"
               >
                 Inventory
               </Link>
@@ -65,7 +69,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             {profile.role === "executive" && (
               <Link
                 href="/admin"
-                className="text-sm font-medium text-text-muted hover:text-text"
+                className="flex min-h-11 items-center text-sm font-medium text-text-muted hover:text-text sm:min-h-0"
               >
                 Admin
               </Link>
@@ -75,7 +79,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-8 py-6">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-8">{children}</main>
     </div>
   );
 }

@@ -32,7 +32,7 @@ export default async function GroceriesLayout({ children }: { children: ReactNod
 
   return (
     <>
-      <div className="-mx-8 -mt-6 mb-6 border-b border-border bg-surface">
+      <div className="-mx-4 -mt-6 mb-6 border-b border-border bg-surface sm:-mx-8">
         <BudgetBar budget={budget} spent={spent} />
         <SubTabs links={links} />
       </div>

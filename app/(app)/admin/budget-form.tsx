@@ -11,7 +11,7 @@ export function BudgetForm({ currentBudget }: { currentBudget: number }) {
   return (
     <form
       action={formAction}
-      className="max-w-sm rounded-lg border border-border bg-surface p-6 shadow-sm"
+      className="max-w-sm rounded-lg border border-border bg-surface p-4 shadow-sm sm:p-6"
     >
       <label htmlFor="amount" className="mb-1.5 block text-sm font-medium text-text">
         Monthly budget ($)
@@ -36,7 +36,7 @@ export function BudgetForm({ currentBudget }: { currentBudget: number }) {
       <button
         type="submit"
         disabled={isPending}
-        className="mt-3 rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-3 rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:py-2"
       >
         {isPending ? "Saving…" : "Save budget"}
       </button>

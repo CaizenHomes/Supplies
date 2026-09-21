@@ -260,23 +260,23 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(16,24,40,0.6)] p-5"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(16,24,40,0.6)] p-3 sm:p-5"
       onClick={(event) => event.target === event.currentTarget && onClose()}
     >
       <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl bg-surface shadow-md">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-6">
           <h2 className="text-[17px] font-semibold text-text">Scan barcode</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-md px-2 py-1 text-text-muted hover:bg-bg hover:text-text"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-text-muted hover:bg-bg hover:text-text sm:h-auto sm:w-auto sm:px-2 sm:py-1"
           >
             ✕
           </button>
         </div>
 
-        <div className="overflow-y-auto px-6 py-5">
+        <div className="overflow-y-auto px-4 py-5 sm:px-6">
           {result === null && scanMode === "camera" && (
             <CameraStep videoRef={videoRef} error={cameraError} />
           )}
@@ -298,13 +298,13 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
               <p className="text-[15px] font-medium text-text">{result.itemName}</p>
               <p className="mt-1 text-sm text-text-muted">Mark this as received?</p>
               <div className="mt-4 flex justify-end gap-2">
-                <button type="button" onClick={resetScan} className="rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg">
+                <button type="button" onClick={resetScan} className="rounded-md border border-border-strong bg-surface px-3.5 py-3 text-sm font-medium text-text hover:bg-bg sm:py-2">
                   Scan again
                 </button>
                 <button
                   type="button"
                   onClick={() => onConfirmed(result.itemId, result.itemName)}
-                  className="rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+                  className="rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover sm:py-2"
                 >
                   Confirm ✓
                 </button>
@@ -320,10 +320,10 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
                 Order List to mark it ordered first.
               </p>
               <div className="mt-4 flex justify-end gap-2">
-                <button type="button" onClick={resetScan} className="rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg">
+                <button type="button" onClick={resetScan} className="rounded-md border border-border-strong bg-surface px-3.5 py-3 text-sm font-medium text-text hover:bg-bg sm:py-2">
                   Scan again
                 </button>
-                <button type="button" onClick={onClose} className="rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover">
+                <button type="button" onClick={onClose} className="rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover sm:py-2">
                   Close
                 </button>
               </div>
@@ -337,10 +337,10 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
                 the current orders.
               </p>
               <div className="mt-4 flex justify-end gap-2">
-                <button type="button" onClick={resetScan} className="rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg">
+                <button type="button" onClick={resetScan} className="rounded-md border border-border-strong bg-surface px-3.5 py-3 text-sm font-medium text-text hover:bg-bg sm:py-2">
                   Scan again
                 </button>
-                <button type="button" onClick={onClose} className="rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover">
+                <button type="button" onClick={onClose} className="rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover sm:py-2">
                   Mark manually
                 </button>
               </div>
@@ -360,14 +360,14 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
                 className="mt-3 w-full rounded-md border border-border-strong px-2.5 py-2 text-sm text-text outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
               />
               <div className="mt-4 flex justify-end gap-2">
-                <button type="button" onClick={resetScan} className="rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg">
+                <button type="button" onClick={resetScan} className="rounded-md border border-border-strong bg-surface px-3.5 py-3 text-sm font-medium text-text hover:bg-bg sm:py-2">
                   Cancel
                 </button>
                 <button
                   type="button"
                   disabled={!newProductName.trim()}
                   onClick={handleCreateProduct}
-                  className="rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:py-2"
                 >
                   Save →
                 </button>
@@ -390,7 +390,7 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
                       <button
                         type="button"
                         onClick={() => handlePickerSelect(item, result.productId)}
-                        className="flex w-full items-center justify-between px-3.5 py-2.5 text-left text-sm hover:bg-accent-soft"
+                        className="flex w-full items-center justify-between px-3.5 py-3 text-left text-sm hover:bg-accent-soft sm:py-2.5"
                       >
                         <span className="text-text">{item.name}</span>
                         <span className="text-xs text-text-muted">
@@ -402,7 +402,7 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
                 </ul>
               )}
               <div className="mt-4 flex justify-end">
-                <button type="button" onClick={onClose} className="rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg">
+                <button type="button" onClick={onClose} className="rounded-md border border-border-strong bg-surface px-3.5 py-3 text-sm font-medium text-text hover:bg-bg sm:py-2">
                   Close
                 </button>
               </div>
@@ -413,7 +413,7 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
             <ResultCard>
               <p className="text-sm text-danger">{result.message}</p>
               <div className="mt-4 flex justify-end">
-                <button type="button" onClick={resetScan} className="rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover">
+                <button type="button" onClick={resetScan} className="rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover sm:py-2">
                   Try again
                 </button>
               </div>
@@ -428,7 +428,7 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
                   setCameraError(null);
                   setScanMode(scanMode === "camera" ? "manual" : "camera");
                 }}
-                className="text-sm font-medium text-accent hover:underline"
+                className="flex min-h-11 items-center text-sm font-medium text-accent hover:underline sm:min-h-0"
               >
                 {scanMode === "camera" ? "Type barcode manually" : "Use camera instead"}
               </button>
@@ -436,7 +436,7 @@ export function BarcodeScanner({ module, onClose, onConfirmed }: BarcodeScannerP
           )}
         </div>
 
-        <div className="border-t border-border bg-[#fafbfc] px-6 py-3 text-xs text-text-muted">
+        <div className="border-t border-border bg-[#fafbfc] px-4 py-3 text-xs text-text-muted sm:px-6">
           Scanner requires camera permission. Works best on mobile.
         </div>
       </div>
@@ -495,7 +495,7 @@ function ManualEntryStep({
       <button
         type="submit"
         disabled={!value.trim()}
-        className="mt-3 w-full rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-3 w-full rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:py-2"
       >
         Look up
       </button>

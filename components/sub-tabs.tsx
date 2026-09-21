@@ -18,14 +18,14 @@ export function SubTabs({ links }: { links: SubTabLink[] }) {
   const visible = links.filter((link) => !link.hidden);
 
   return (
-    <nav className="flex gap-1 border-t border-border px-8">
+    <nav className="flex gap-1 overflow-x-auto border-t border-border px-4 sm:px-8">
       {visible.map((link) => {
         const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
         return (
           <Link
             key={link.href}
             href={link.href}
-            className={`flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium ${
+            className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium sm:py-2.5 ${
               active
                 ? "border-accent text-accent"
                 : "border-transparent text-text-muted hover:text-text"

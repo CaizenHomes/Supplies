@@ -27,7 +27,7 @@ export function CancelButton({ itemId, itemName }: { itemId: string; itemName: s
         type="button"
         onClick={handleClick}
         disabled={isPending}
-        className="rounded-md px-2 py-1.5 text-xs font-medium text-danger hover:bg-danger-soft disabled:opacity-50"
+        className="rounded-md px-2 py-3.5 text-xs font-medium text-danger hover:bg-danger-soft disabled:opacity-50 sm:py-1.5"
       >
         {isPending ? "Cancelling…" : "Cancel"}
       </button>

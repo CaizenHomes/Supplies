@@ -97,11 +97,128 @@ function itemRow(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } = 
   );
 }
 
+// Mobile card equivalent of itemRow — same data, reflowed vertically.
+function itemCard(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } = {}) {
+  const total = rowTotal(item);
+  const completedAt = item.checked_at ?? item.rejected_at ?? item.cancelled_at ?? item.requested_at;
+  const status = item.status ?? "";
+
+  return (
+    <div key={item.id} className="rounded-lg border border-border bg-surface p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-medium text-text">
+            {item.name}
+            {item.urgency === "urgent" && (
+              <span className="ml-1.5 inline-block rounded-full bg-danger-soft px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-danger">
+                Urgent
+              </span>
+            )}
+          </div>
+          <div className="mt-0.5 text-xs text-text-muted">
+            {item.vendor} · by {item.requested_by_name ?? "Unknown"}
+          </div>
+          {status === "cancelled" && item.cancellation_reason && (
+            <div className="mt-0.5 text-xs text-text-subtle">Reason: {item.cancellation_reason}</div>
+          )}
+        </div>
+        <span
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[status] ?? "bg-bg text-text-muted"}`}
+        >
+          {STATUS_LABEL[status] ?? status}
+        </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-xs text-text-muted">
+        <span className="tabular-nums">
+          Qty {item.qty}
+          {total !== null && (
+            <>
+              {" · "}
+              <span className="font-semibold text-text">{formatCurrency(total)}</span>
+            </>
+          )}
+        </span>
+        {!hideReceipt && item.receiptUrl && (
+          <a
+            href={item.receiptUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-full border border-border bg-bg px-2 py-0.5 text-[11px] text-text-muted hover:border-accent hover:text-accent"
+          >
+            📎 view
+          </a>
+        )}
+        {item.checked_by_name && <span>Verified by {item.checked_by_name}</span>}
+        <span>{formatDate(completedAt)}</span>
+      </div>
+    </div>
+  );
+}
+
+// Mobile card equivalent of a vendor group — header, nested order sub-groups, subtotal.
+function GroupCard({ group }: { group: { vendor: string; items: HistoryRow[]; subtotal: number | null } }) {
+  const units = buildReceiptRenderUnits(group.items, (item) => item.checked_at);
+
+  return (
+    <div className="rounded-lg border border-border bg-bg p-3">
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+        {group.vendor}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {units.flatMap((unit) => {
+          if (unit.kind === "row") {
+            return [itemCard(unit.item)];
+          }
+
+          const receiptUrl = unit.items.find((item) => item.receiptUrl)?.receiptUrl ?? null;
+          return [
+            <div
+              key={`${unit.key}__sub-header`}
+              className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-1 text-[10.5px] font-medium text-text-muted"
+            >
+              <span>Order · {formatDate(unit.date)}</span>
+              {receiptUrl && (
+                <a
+                  href={receiptUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  📎 view receipt
+                </a>
+              )}
+            </div>,
+            ...unit.items.map((item) => itemCard(item, { hideReceipt: true })),
+          ];
+        })}
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2 text-xs font-semibold text-text-muted">
+        <span>
+          Subtotal · {group.items.length} item{group.items.length === 1 ? "" : "s"}
+        </span>
+        <span className="tabular-nums text-text">
+          {group.subtotal === null ? "—" : formatCurrency(group.subtotal)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function HistoryTable({ items }: { items: HistoryRow[] }) {
   const groups = groupByVendor(items);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+    <>
+      <div className="flex flex-col gap-3 md:hidden">
+        {groups.map((group) => (
+          <GroupCard key={group.vendor} group={group} />
+        ))}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-lg border border-border bg-surface shadow-sm md:block">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-[#fafbfc]">
@@ -187,6 +304,7 @@ export function HistoryTable({ items }: { items: HistoryRow[] }) {
           })}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }

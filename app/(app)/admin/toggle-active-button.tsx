@@ -32,7 +32,7 @@ export function ToggleActiveButton({
         type="button"
         onClick={handleClick}
         disabled={isPending}
-        className="rounded-md border border-border-strong bg-surface px-2.5 py-1 text-xs font-medium text-text hover:bg-bg disabled:opacity-50"
+        className="rounded-md border border-border-strong bg-surface px-2.5 py-3.5 text-xs font-medium text-text hover:bg-bg disabled:opacity-50 sm:py-1"
       >
         {isPending ? "Working…" : isActive ? "Deactivate" : "Reactivate"}
       </button>

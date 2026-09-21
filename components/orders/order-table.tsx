@@ -65,7 +65,70 @@ export function OrderTable({
         <BulkActionBar selectedIds={selectedIds} onDone={() => setSelected(new Set())} />
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+      <div className="flex flex-col gap-3 md:hidden">
+        {inListItems.map((item) => (
+          <ItemCard
+            key={item.id}
+            item={item}
+            module={module}
+            checkbox={
+              canManage ? { checked: selected.has(item.id!), onToggle: () => toggle(item.id!) } : undefined
+            }
+            actions={
+              canManage ? (
+                <>
+                  <MarkOrderedModal itemId={item.id!} />
+                  <CancelButton itemId={item.id!} itemName={item.name ?? "this item"} />
+                </>
+              ) : null
+            }
+            showReceipt
+          />
+        ))}
+
+        {orderedUnits.map((unit) =>
+          unit.kind === "row" ? (
+            <ItemCard
+              key={unit.key}
+              item={unit.item}
+              module={module}
+              actions={
+                canManage ? (
+                  <>
+                    <MarkReceivedButton
+                      itemIds={[unit.item.id!]}
+                      itemName={unit.item.name ?? undefined}
+                      module={module}
+                      currentUserId={currentUserId}
+                      activeProfiles={activeProfiles}
+                    />
+                    <CancelButton itemId={unit.item.id!} itemName={unit.item.name ?? "this item"} />
+                  </>
+                ) : null
+              }
+              showReceipt
+            />
+          ) : (
+            <GroupCards
+              key={unit.key}
+              items={unit.items}
+              date={unit.date}
+              module={module}
+              canManage={canManage}
+              currentUserId={currentUserId}
+              activeProfiles={activeProfiles}
+            />
+          ),
+        )}
+
+        {inListItems.length === 0 && orderedUnits.length === 0 && (
+          <div className="rounded-lg border border-dashed border-border-strong bg-surface p-6 text-center text-sm text-text-muted">
+            No items here.
+          </div>
+        )}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-lg border border-border bg-surface shadow-sm md:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-[#fafbfc]">
@@ -341,5 +404,180 @@ function GroupRows({
         </td>
       </tr>
     </>
+  );
+}
+
+// Mobile card equivalent of ItemRow — same data and actions, reflowed for narrow screens.
+function ItemCard({
+  item,
+  module,
+  checkbox,
+  actions,
+  showReceipt,
+}: {
+  item: OrderRow;
+  module: "groceries" | "supplies";
+  checkbox?: { checked: boolean; onToggle: () => void };
+  actions: ReactNode;
+  showReceipt: boolean;
+}) {
+  const total = rowTotal(item);
+  const requesterName = item.requested_by_name ?? "Unknown";
+  const status = item.status ?? "";
+  const requestedLabel = module === "groceries" ? "wished by" : "requested by";
+
+  return (
+    <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        {checkbox && (
+          <input
+            type="checkbox"
+            checked={checkbox.checked}
+            onChange={checkbox.onToggle}
+            className="mt-1 h-5 w-5 shrink-0 rounded border-border-strong accent-accent"
+            aria-label={`Select ${item.name}`}
+          />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="font-medium text-text">
+                {item.name}
+                {module === "supplies" && item.urgency === "urgent" && (
+                  <span className="ml-1.5 inline-block rounded-full bg-danger-soft px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-danger">
+                    Urgent
+                  </span>
+                )}
+              </div>
+              <div className="mt-0.5 text-xs text-text-muted">
+                <span className="mr-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent-soft text-[10px] font-semibold text-accent">
+                  {initials(requesterName)}
+                </span>
+                {item.vendor} · {requestedLabel} {requesterName}
+                {item.link && (
+                  <>
+                    {" · "}
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent hover:underline"
+                    >
+                      🔗 link
+                    </a>
+                  </>
+                )}
+              </div>
+            </div>
+            <span
+              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[status] ?? "bg-bg text-text-muted"}`}
+            >
+              {STATUS_LABEL[status] ?? status}
+            </span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-xs text-text-muted">
+            <span className="tabular-nums">
+              Qty {item.qty}
+              {total !== null && (
+                <>
+                  {" · "}
+                  <span className="font-semibold text-text">{formatCurrency(total)}</span>
+                </>
+              )}
+            </span>
+            {showReceipt && item.receiptUrl && (
+              <a
+                href={item.receiptUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-full border border-border bg-bg px-2 py-0.5 text-[11px] text-text-muted hover:border-accent hover:text-accent"
+              >
+                📎 view
+              </a>
+            )}
+            {item.checked_by_name && <span>Verified by {item.checked_by_name}</span>}
+          </div>
+
+          {actions && <div className="mt-3 flex flex-wrap items-center gap-2">{actions}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Mobile card equivalent of GroupRows — a receipt-group of item cards with a vendor/date
+// header and a subtotal footer, matching what the desktop grouped table row shows.
+function GroupCards({
+  items,
+  date,
+  module,
+  canManage,
+  currentUserId,
+  activeProfiles,
+}: {
+  items: OrderRow[];
+  date: string | null;
+  module: "groceries" | "supplies";
+  canManage: boolean;
+  currentUserId: string;
+  activeProfiles: ActiveProfile[];
+}) {
+  const vendors = new Set(items.map((item) => item.vendor ?? "Unknown vendor"));
+  const vendorLabel = vendors.size > 1 ? "Multiple vendors" : (items[0].vendor ?? "Unknown vendor");
+  const receiptUrl = items.find((item) => item.receiptUrl)?.receiptUrl ?? null;
+  const totals = items.map(rowTotal);
+  const subtotal = totals.every((total) => total !== null)
+    ? (totals as number[]).reduce((sum, total) => sum + total, 0)
+    : null;
+  const itemIds = items.map((item) => item.id!);
+
+  return (
+    <div className="rounded-lg border border-border bg-bg p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+        <span>
+          {vendorLabel} order · {formatDate(date)}
+        </span>
+        {receiptUrl && (
+          <a
+            href={receiptUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="normal-case tracking-normal text-accent hover:underline"
+          >
+            📎 view receipt
+          </a>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {items.map((item) => (
+          <ItemCard
+            key={item.id}
+            item={item}
+            module={module}
+            actions={canManage ? <CancelButton itemId={item.id!} itemName={item.name ?? "this item"} /> : null}
+            showReceipt={false}
+          />
+        ))}
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2 text-xs font-semibold text-text-muted">
+        <span>Subtotal · {items.length} items</span>
+        <span className="tabular-nums text-text">{subtotal === null ? "—" : formatCurrency(subtotal)}</span>
+      </div>
+
+      {canManage && (
+        <div className="mt-2">
+          <MarkReceivedButton
+            itemIds={itemIds}
+            module={module}
+            currentUserId={currentUserId}
+            activeProfiles={activeProfiles}
+            label="Mark received"
+          />
+        </div>
+      )}
+    </div>
   );
 }

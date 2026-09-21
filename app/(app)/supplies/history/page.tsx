@@ -43,7 +43,7 @@ export default async function SuppliesHistoryPage({
 
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-base font-semibold text-text">Supply history</h1>
           <p className="mt-0.5 text-sm text-text-muted">
@@ -53,7 +53,7 @@ export default async function SuppliesHistoryPage({
         {profile.role === "executive" && (
           <a
             href="/supplies/history/export"
-            className="rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg"
+            className="flex min-h-11 items-center rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg sm:min-h-0"
           >
             Export CSV
           </a>

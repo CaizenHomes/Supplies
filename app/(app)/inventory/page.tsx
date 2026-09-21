@@ -41,7 +41,7 @@ function SpendCard({ title, totals }: { title: string; totals: ModuleTotals }) {
     <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
       <p className="text-sm text-text-muted">{title}</p>
       <p className="mt-1 text-2xl font-semibold text-text">{formatCurrency(totals.total)}</p>
-      <div className="mt-3 flex gap-4 text-sm text-text-muted">
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-text-muted">
         <span>
           Groceries <span className="font-medium text-text">{formatCurrency(totals.groceries)}</span>
         </span>

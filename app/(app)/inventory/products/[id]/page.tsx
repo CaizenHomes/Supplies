@@ -53,7 +53,7 @@ export default async function ProductDetailPage({
         </Link>
       </div>
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div>
           <h1 className="text-lg font-semibold text-text">{product.name}</h1>
           <p className="mt-1 text-sm text-text-muted">
@@ -95,63 +95,98 @@ export default async function ProductDetailPage({
             No items linked to this product yet.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-[#fafbfc]">
-                  <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                    Date
-                  </th>
-                  <th className="px-3.5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                    Qty
-                  </th>
-                  <th className="px-3.5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                    Unit price
-                  </th>
-                  <th className="px-3.5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                    Total
-                  </th>
-                  <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders.map((order) => {
-                  const total = order.unit_price === null ? null : order.qty * order.unit_price;
-                  return (
-                    <tr key={order.id} className="border-b border-border last:border-0">
-                      <td className="px-3.5 py-3 text-text">{formatDate(order.requested_at)}</td>
-                      <td className="px-3.5 py-3 text-right tabular-nums">{order.qty}</td>
-                      <td className="px-3.5 py-3 text-right tabular-nums">
+          <>
+            <div className="hidden overflow-hidden rounded-lg border border-border bg-surface shadow-sm md:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-[#fafbfc]">
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                      Date
+                    </th>
+                    <th className="px-3.5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                      Qty
+                    </th>
+                    <th className="px-3.5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                      Unit price
+                    </th>
+                    <th className="px-3.5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                      Total
+                    </th>
+                    <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentOrders.map((order) => {
+                    const total = order.unit_price === null ? null : order.qty * order.unit_price;
+                    return (
+                      <tr key={order.id} className="border-b border-border last:border-0">
+                        <td className="px-3.5 py-3 text-text">{formatDate(order.requested_at)}</td>
+                        <td className="px-3.5 py-3 text-right tabular-nums">{order.qty}</td>
+                        <td className="px-3.5 py-3 text-right tabular-nums">
+                          {order.unit_price != null ? (
+                            formatCurrency(order.unit_price)
+                          ) : (
+                            <span className="text-text-subtle">—</span>
+                          )}
+                        </td>
+                        <td className="px-3.5 py-3 text-right font-semibold tabular-nums">
+                          {total !== null ? (
+                            formatCurrency(total)
+                          ) : (
+                            <span className="text-text-subtle">—</span>
+                          )}
+                        </td>
+                        <td className="px-3.5 py-3">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                              STATUS_CLASS[order.status] ?? "bg-bg text-text-muted"
+                            }`}
+                          >
+                            {STATUS_LABEL[order.status] ?? order.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="grid gap-3 md:hidden">
+              {recentOrders.map((order) => {
+                const total = order.unit_price === null ? null : order.qty * order.unit_price;
+                return (
+                  <div key={order.id} className="rounded-lg border border-border bg-surface p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-text">{formatDate(order.requested_at)}</span>
+                      <span
+                        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                          STATUS_CLASS[order.status] ?? "bg-bg text-text-muted"
+                        }`}
+                      >
+                        {STATUS_LABEL[order.status] ?? order.status}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-baseline justify-between text-sm">
+                      <span className="text-text-muted">
+                        {order.qty} ×{" "}
                         {order.unit_price != null ? (
                           formatCurrency(order.unit_price)
                         ) : (
                           <span className="text-text-subtle">—</span>
                         )}
-                      </td>
-                      <td className="px-3.5 py-3 text-right font-semibold tabular-nums">
-                        {total !== null ? (
-                          formatCurrency(total)
-                        ) : (
-                          <span className="text-text-subtle">—</span>
-                        )}
-                      </td>
-                      <td className="px-3.5 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                            STATUS_CLASS[order.status] ?? "bg-bg text-text-muted"
-                          }`}
-                        >
-                          {STATUS_LABEL[order.status] ?? order.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </span>
+                      <span className="font-semibold tabular-nums text-text">
+                        {total !== null ? formatCurrency(total) : <span className="text-text-subtle">—</span>}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </section>

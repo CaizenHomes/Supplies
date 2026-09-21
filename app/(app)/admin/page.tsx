@@ -36,7 +36,7 @@ export default async function AdminPage() {
       </div>
 
       <div>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-base font-semibold text-text">Team & permissions</h2>
             <p className="mt-0.5 text-sm text-text-muted">
@@ -46,7 +46,7 @@ export default async function AdminPage() {
           <InviteModal />
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+        <div className="hidden overflow-hidden rounded-lg border border-border bg-surface shadow-sm md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-[#fafbfc]">
@@ -100,6 +100,40 @@ export default async function AdminPage() {
               })}
             </tbody>
           </table>
+        </div>
+
+        <div className="grid gap-3 md:hidden">
+          {team.map((person) => {
+            const isSelf = person.id === profile.id;
+            return (
+              <div
+                key={person.id}
+                className="rounded-lg border border-border bg-surface p-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center">
+                    <span className="mr-1.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent">
+                      {initials(person.full_name)}
+                    </span>
+                    <span className="truncate font-medium text-text">{person.full_name}</span>
+                    {isSelf && <span className="ml-1.5 shrink-0 text-xs text-text-subtle">(you)</span>}
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      person.is_active ? "bg-success-soft text-success" : "bg-bg text-text-muted"
+                    }`}
+                  >
+                    {person.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                <p className="mt-1 truncate text-xs text-text-muted">{person.email}</p>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <RoleSelect userId={person.id} currentRole={person.role} />
+                  <ToggleActiveButton userId={person.id} isActive={person.is_active} />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

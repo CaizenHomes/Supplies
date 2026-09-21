@@ -36,25 +36,25 @@ export function EditProductModal({ product }: { product: Product }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg"
+        className="rounded-md border border-border-strong bg-surface px-3.5 py-3 text-sm font-medium text-text hover:bg-bg sm:py-2"
       >
         Edit product
       </button>
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(16,24,40,0.4)] p-5"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(16,24,40,0.4)] p-3 sm:p-5"
           onClick={(event) => event.target === event.currentTarget && setOpen(false)}
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-surface shadow-md">
             <form action={formAction} onSubmit={handleSubmit}>
               <input type="hidden" name="product_id" value={product.id} />
 
-              <div className="border-b border-border px-6 py-5">
+              <div className="border-b border-border px-4 py-5 sm:px-6">
                 <h2 className="text-[17px] font-semibold text-text">Edit product</h2>
               </div>
 
-              <div className="px-6 py-5">
+              <div className="px-4 py-5 sm:px-6">
                 <div className="mb-3.5">
                   <label htmlFor="p-name" className="mb-1.5 block text-sm font-medium text-text">
                     Name
@@ -69,7 +69,7 @@ export function EditProductModal({ product }: { product: Product }) {
                   />
                 </div>
 
-                <div className="mb-3.5 grid grid-cols-2 gap-3">
+                <div className="mb-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label htmlFor="p-vendor" className="mb-1.5 block text-sm font-medium text-text">
                       Default vendor
@@ -131,18 +131,18 @@ export function EditProductModal({ product }: { product: Product }) {
                 {state.error && <p className="text-sm text-danger">{state.error}</p>}
               </div>
 
-              <div className="flex justify-end gap-2 rounded-b-xl border-t border-border bg-[#fafbfc] px-6 py-3.5">
+              <div className="flex flex-col-reverse justify-end gap-2 rounded-b-xl border-t border-border bg-[#fafbfc] px-4 py-3.5 sm:flex-row sm:px-6">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg"
+                  className="rounded-md border border-border-strong bg-surface px-3.5 py-3 text-sm font-medium text-text hover:bg-bg sm:py-2"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="rounded-md bg-accent px-3.5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:py-2"
                 >
                   {isPending ? "Saving…" : "Save changes"}
                 </button>

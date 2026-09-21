@@ -6,8 +6,8 @@ export function BudgetBar({ budget, spent }: { budget: number; spent: number }) 
   const fillClass = pct >= 100 ? "bg-danger" : pct >= 80 ? "bg-warning" : "bg-accent";
 
   return (
-    <div className="border-t border-border px-8 py-2.5">
-      <div className="flex items-baseline gap-2 text-[13px]">
+    <div className="border-t border-border px-4 py-2.5 sm:px-8">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[13px]">
         <span className="text-text-muted">Monthly budget</span>
         <span className="font-semibold text-text">
           {formatCurrency(spent)} / {formatCurrency(budget)}

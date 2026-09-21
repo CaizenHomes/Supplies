@@ -51,9 +51,9 @@ export default async function GroceriesApprovalsPage() {
             return (
               <div
                 key={item.id}
-                className="rounded-lg border border-l-[3px] border-border border-l-warning bg-surface p-5 shadow-sm"
+                className="rounded-lg border border-l-[3px] border-border border-l-warning bg-surface p-4 shadow-sm sm:p-5"
               >
-                <div className="mb-3 flex items-start justify-between">
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <div className="text-[15px] font-semibold text-text">{item.name}</div>
                     <div className="text-xs text-text-muted">
@@ -65,7 +65,7 @@ export default async function GroceriesApprovalsPage() {
                   </span>
                 </div>
 
-                <div className="mb-3.5 grid grid-cols-4 gap-4 rounded-md bg-bg p-3">
+                <div className="mb-3.5 grid grid-cols-2 gap-4 rounded-md bg-bg p-3 sm:grid-cols-4">
                   <div>
                     <div className="text-[11px] uppercase tracking-wide text-text-muted">Quantity</div>
                     <div className="mt-0.5 text-sm font-medium text-text">{item.qty}</div>

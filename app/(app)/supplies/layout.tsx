@@ -27,7 +27,7 @@ export default async function SuppliesLayout({ children }: { children: ReactNode
 
   return (
     <>
-      <div className="-mx-8 -mt-6 mb-6 border-b border-border bg-surface">
+      <div className="-mx-4 -mt-6 mb-6 border-b border-border bg-surface sm:-mx-8">
         <SubTabs links={links} />
       </div>
       {children}

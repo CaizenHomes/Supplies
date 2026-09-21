@@ -25,7 +25,7 @@ export function WithdrawButton({ itemId, itemName }: { itemId: string; itemName:
         type="button"
         onClick={handleClick}
         disabled={isPending}
-        className="rounded-md px-2 py-1.5 text-xs font-medium text-text-muted hover:bg-bg hover:text-text disabled:opacity-50"
+        className="flex min-h-11 items-center rounded-md px-2 py-1.5 text-xs font-medium text-text-muted hover:bg-bg hover:text-text disabled:opacity-50 sm:min-h-0"
       >
         {isPending ? "Withdrawing…" : "Withdraw"}
       </button>

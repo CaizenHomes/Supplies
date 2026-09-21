@@ -34,7 +34,7 @@ export function HistoryFilter({ basePath }: { basePath: string }) {
         id="history-filter"
         value={current}
         onChange={handleChange}
-        className="rounded-md border border-border-strong bg-white px-2.5 py-1.5 text-[13px] text-text"
+        className="min-h-11 rounded-md border border-border-strong bg-white px-2.5 py-1.5 text-[13px] text-text sm:min-h-0"
       >
         {OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>

@@ -46,7 +46,71 @@ export default async function SuppliesRequestsPage() {
           <p>Click &ldquo;+ New request&rdquo; to ask for a supply item.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+        <>
+          <div className="grid gap-3 md:hidden">
+            {requests.map((item) => {
+              const total = item.unit_price === null ? null : (item.qty ?? 0) * item.unit_price;
+              const requesterName = item.requested_by_name ?? "Unknown";
+              const canWithdraw = canManage || item.requested_by === profile.id;
+
+              return (
+                <div key={item.id} className="rounded-lg border border-border bg-surface p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium text-text">
+                        {item.name}
+                        {item.urgency === "urgent" && (
+                          <span className="ml-1.5 inline-block rounded-full bg-danger-soft px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-danger">
+                            Urgent
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 text-xs text-text-muted">
+                        {item.vendor}
+                        {item.link && (
+                          <>
+                            {" · "}
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-accent hover:underline"
+                            >
+                              🔗 link
+                            </a>
+                          </>
+                        )}
+                      </div>
+                      {item.note && (
+                        <div className="mt-1 text-xs italic text-text-muted">{item.note}</div>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="font-semibold tabular-nums text-text">
+                        {total === null ? (
+                          <span className="text-xs font-normal text-text-subtle">—</span>
+                        ) : (
+                          formatCurrency(total)
+                        )}
+                      </div>
+                      <div className="text-xs tabular-nums text-text-muted">Qty {item.qty}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                    <span className="text-[12.5px] text-text">{requesterName}</span>
+                    {canWithdraw ? (
+                      <WithdrawButton itemId={item.id!} itemName={item.name ?? "this item"} />
+                    ) : (
+                      <span className="text-xs text-text-subtle">—</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="hidden overflow-hidden rounded-lg border border-border bg-surface shadow-sm md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-[#fafbfc]">
@@ -126,7 +190,8 @@ export default async function SuppliesRequestsPage() {
               })}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </section>
   );

@@ -48,7 +48,73 @@ export default async function WishlistPage() {
           <p>Click &ldquo;+ Add wish&rdquo; to request a snack for the month.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+        <>
+          <div className="grid gap-3 md:hidden">
+            {wishlist.map((item) => {
+              const total = (item.qty ?? 0) * (item.unit_price ?? 0);
+              const canDelete = canManage || item.requested_by === profile.id;
+              const requesterName = item.requested_by_name ?? "Unknown";
+
+              return (
+                <div key={item.id} className="rounded-lg border border-border bg-surface p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium text-text">{item.name}</div>
+                      <div className="mt-0.5 text-xs text-text-muted">
+                        {item.vendor}
+                        {item.link && (
+                          <>
+                            {" · "}
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-accent hover:underline"
+                            >
+                              🔗 link
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="font-semibold tabular-nums text-text">{formatCurrency(total)}</div>
+                      <div className="text-xs tabular-nums text-text-muted">
+                        {item.qty} × {formatCurrency(item.unit_price ?? 0)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold text-accent">
+                        {initials(requesterName)}
+                      </span>
+                      <span className="text-[12.5px] text-text">{requesterName}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {canManage && (
+                        <PromoteModal
+                          itemId={item.id!}
+                          itemName={item.name ?? "this item"}
+                          itemTotal={total}
+                          budget={budget}
+                          spentThisMonth={spent}
+                        />
+                      )}
+                      {canDelete ? (
+                        <DeleteWishButton itemId={item.id!} itemName={item.name ?? "this item"} />
+                      ) : (
+                        !canManage && <span className="text-xs text-text-subtle">—</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="hidden overflow-hidden rounded-lg border border-border bg-surface shadow-sm md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-[#fafbfc]">
@@ -135,7 +201,8 @@ export default async function WishlistPage() {
               })}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </section>
   );
