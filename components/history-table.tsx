@@ -35,9 +35,12 @@ function groupByVendor(items: HistoryRow[]) {
   return Array.from(groups.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([vendor, vendorItems]) => {
-      const totals = vendorItems.map(rowTotal).filter((total) => total !== null) as number[];
+      // Only money actually spent counts — cancelled/rejected rows still render, but the
+      // database's counts_as_spent flag keeps them out of the subtotal.
+      const countedItems = vendorItems.filter((item) => item.counts_as_spent);
+      const totals = countedItems.map(rowTotal).filter((total) => total !== null) as number[];
       const subtotal = totals.length > 0 ? totals.reduce((sum, total) => sum + total, 0) : null;
-      return { vendor, items: vendorItems, subtotal };
+      return { vendor, items: vendorItems, countedCount: countedItems.length, subtotal };
     });
 }
 
@@ -154,7 +157,7 @@ function itemCard(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } =
 }
 
 // Mobile card equivalent of a vendor group — header, nested order sub-groups, subtotal.
-function GroupCard({ group }: { group: { vendor: string; items: HistoryRow[]; subtotal: number | null } }) {
+function GroupCard({ group }: { group: ReturnType<typeof groupByVendor>[number] }) {
   const units = buildReceiptRenderUnits(group.items, (item) => item.checked_at);
 
   return (
@@ -185,7 +188,7 @@ function GroupCard({ group }: { group: { vendor: string; items: HistoryRow[]; su
 
       <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2 text-xs font-semibold text-text-muted">
         <span>
-          Subtotal · {group.items.length} item{group.items.length === 1 ? "" : "s"}
+          Subtotal · {group.countedCount} item{group.countedCount === 1 ? "" : "s"}
         </span>
         <span className="tabular-nums text-text">
           {group.subtotal === null ? "—" : formatCurrency(group.subtotal)}
@@ -269,7 +272,7 @@ export function HistoryTable({ items }: { items: HistoryRow[] }) {
               <tr key={`${group.vendor}__subtotal`} className="border-b border-border bg-bg">
                 <td className="px-3.5 py-2 text-xs font-semibold text-text-muted">Subtotal</td>
                 <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text-muted">
-                  {group.items.length} item{group.items.length === 1 ? "" : "s"}
+                  {group.countedCount} item{group.countedCount === 1 ? "" : "s"}
                 </td>
                 <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text">
                   {group.subtotal === null ? "—" : formatCurrency(group.subtotal)}

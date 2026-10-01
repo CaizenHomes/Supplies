@@ -43,7 +43,11 @@ export async function getInventoryData(): Promise<InventoryData> {
   const { data } = await supabase
     .from("items_detailed")
     .select("module, checked_at, total")
-    .eq("status", "received");
+    // Received only, dated by received date (checked_at). counts_as_spent is the shared
+    // spend definition; it's redundant with "received" today but keeps Inventory from
+    // ever counting something the rest of the app doesn't.
+    .eq("status", "received")
+    .eq("counts_as_spent", true);
 
   const rows = (data ?? []) as ReceivedRow[];
   const now = new Date();

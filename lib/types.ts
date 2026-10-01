@@ -361,6 +361,7 @@ export type Database = {
           checked_at: string | null
           checked_by: string | null
           checked_by_name: string | null
+          counts_as_spent: boolean | null
           created_at: string | null
           id: string | null
           link: string | null
@@ -636,6 +637,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      counts_against_budget: {
+        Args: { s: Database["public"]["Enums"]["item_status"] }
+        Returns: boolean
+      }
+      counts_as_spent: {
+        Args: { s: Database["public"]["Enums"]["item_status"] }
+        Returns: boolean
       }
       current_budget_amount: { Args: never; Returns: number }
       current_profile_role: {

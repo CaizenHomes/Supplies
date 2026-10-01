@@ -4,10 +4,10 @@ import type { Tables } from "@/lib/types";
 export type Product = Tables<"products">;
 export type ProductWithUsage = Product & { timesOrdered: number };
 
-// "Actually purchased" — matches the spec's usage-count definition exactly, and is also
-// what average/latest price and the trend indicator are computed from (a wishlist guess
-// or a rejected request's price isn't a real purchase price).
-const COUNTED_STATUSES = ["ordered", "received"] as const;
+// "Actually purchased" is the database's counts_as_spent flag on items_detailed — the same
+// definition the History subtotal and budget use. It's also what average/latest price and
+// the trend indicator are computed from (a wishlist guess or a rejected request's price
+// isn't a real purchase price).
 
 export async function getProductsWithUsage(): Promise<ProductWithUsage[]> {
   const supabase = await createClient();
@@ -15,10 +15,10 @@ export async function getProductsWithUsage(): Promise<ProductWithUsage[]> {
   const [{ data: products }, { data: countedItems }] = await Promise.all([
     supabase.from("products").select("*"),
     supabase
-      .from("items")
+      .from("items_detailed")
       .select("product_id")
       .not("product_id", "is", null)
-      .in("status", COUNTED_STATUSES),
+      .eq("counts_as_spent", true),
   ]);
 
   const counts = new Map<string, number>();
@@ -65,10 +65,10 @@ export async function getProductDetail(id: string): Promise<ProductDetail | null
       .order("requested_at", { ascending: false })
       .limit(5),
     supabase
-      .from("items")
+      .from("items_detailed")
       .select("unit_price")
       .eq("product_id", id)
-      .in("status", COUNTED_STATUSES)
+      .eq("counts_as_spent", true)
       .order("ordered_at", { ascending: false }),
   ]);
 
