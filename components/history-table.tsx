@@ -41,6 +41,19 @@ function groupByVendor(items: HistoryRow[]) {
     });
 }
 
+function ReceiptPill({ href }: { href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 rounded-full border border-border bg-bg px-2 py-0.5 text-[11px] font-normal normal-case tracking-normal text-text-muted hover:border-accent hover:text-accent"
+    >
+      📎 view
+    </a>
+  );
+}
+
 function itemRow(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } = {}) {
   const total = rowTotal(item);
   const completedAt = item.checked_at ?? item.rejected_at ?? item.cancelled_at ?? item.requested_at;
@@ -76,15 +89,8 @@ function itemRow(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } = 
         </span>
       </td>
       <td className="px-3.5 py-3">
-        {!hideReceipt && item.receiptUrl ? (
-          <a
-            href={item.receiptUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-bg px-2 py-0.5 text-[11px] text-text-muted hover:border-accent hover:text-accent"
-          >
-            📎 view
-          </a>
+        {hideReceipt ? null : item.receiptUrl ? (
+          <ReceiptPill href={item.receiptUrl} />
         ) : (
           <span className="text-xs text-text-subtle">—</span>
         )}
@@ -139,16 +145,7 @@ function itemCard(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } =
             </>
           )}
         </span>
-        {!hideReceipt && item.receiptUrl && (
-          <a
-            href={item.receiptUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-bg px-2 py-0.5 text-[11px] text-text-muted hover:border-accent hover:text-accent"
-          >
-            📎 view
-          </a>
-        )}
+        {!hideReceipt && item.receiptUrl && <ReceiptPill href={item.receiptUrl} />}
         {item.checked_by_name && <span>Verified by {item.checked_by_name}</span>}
         <span>{formatDate(completedAt)}</span>
       </div>
@@ -176,19 +173,10 @@ function GroupCard({ group }: { group: { vendor: string; items: HistoryRow[]; su
           return [
             <div
               key={`${unit.key}__sub-header`}
-              className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-1 text-[10.5px] font-medium text-text-muted"
+              className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pl-1 text-[10.5px] font-medium text-text-muted"
             >
               <span>Order · {formatDate(unit.date)}</span>
-              {receiptUrl && (
-                <a
-                  href={receiptUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent hover:underline"
-                >
-                  📎 view receipt
-                </a>
-              )}
+              {receiptUrl && <ReceiptPill href={receiptUrl} />}
             </div>,
             ...unit.items.map((item) => itemCard(item, { hideReceipt: true })),
           ];
@@ -267,24 +255,13 @@ export function HistoryTable({ items }: { items: HistoryRow[] }) {
                 return [
                   <tr key={`${unit.key}__sub-header`} className="border-b border-border bg-bg">
                     <td
-                      colSpan={7}
+                      colSpan={4}
                       className="px-3.5 py-1 pl-7 text-[10.5px] font-medium normal-case text-text-muted"
                     >
                       Order · {formatDate(unit.date)}
-                      {receiptUrl && (
-                        <>
-                          {" · "}
-                          <a
-                            href={receiptUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-accent hover:underline"
-                          >
-                            📎 view receipt
-                          </a>
-                        </>
-                      )}
                     </td>
+                    <td className="px-3.5 py-1">{receiptUrl && <ReceiptPill href={receiptUrl} />}</td>
+                    <td colSpan={2} className="px-3.5 py-1" />
                   </tr>,
                   ...unit.items.map((item) => itemRow(item, { hideReceipt: true })),
                 ];

@@ -57,7 +57,6 @@ export function OrderTable({
   const orderedItems = orders.filter((order) => order.status === "ordered");
   const orderedUnits = buildReceiptRenderUnits(orderedItems, (item) => item.ordered_at);
   const selectedIds = inListItems.filter((item) => selected.has(item.id!)).map((item) => item.id!);
-  const columnCount = canManage ? 8 : 7;
 
   return (
     <>
@@ -210,7 +209,6 @@ export function OrderTable({
                   canManage={canManage}
                   currentUserId={currentUserId}
                   activeProfiles={activeProfiles}
-                  columnCount={columnCount}
                 />
               ),
             )}
@@ -218,6 +216,19 @@ export function OrderTable({
         </table>
       </div>
     </>
+  );
+}
+
+function ReceiptPill({ href }: { href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 rounded-full border border-border bg-bg px-2 py-0.5 text-[11px] font-normal normal-case tracking-normal text-text-muted hover:border-accent hover:text-accent"
+    >
+      📎 view
+    </a>
   );
 }
 
@@ -297,15 +308,8 @@ function ItemRow({
         </span>
       </td>
       <td className="px-3.5 py-3">
-        {showReceipt && item.receiptUrl ? (
-          <a
-            href={item.receiptUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-bg px-2 py-0.5 text-[11px] text-text-muted hover:border-accent hover:text-accent"
-          >
-            📎 view
-          </a>
+        {!showReceipt ? null : item.receiptUrl ? (
+          <ReceiptPill href={item.receiptUrl} />
         ) : (
           <span className="text-xs text-text-subtle">—</span>
         )}
@@ -331,7 +335,6 @@ function GroupRows({
   canManage,
   currentUserId,
   activeProfiles,
-  columnCount,
 }: {
   items: OrderRow[];
   date: string | null;
@@ -339,7 +342,6 @@ function GroupRows({
   canManage: boolean;
   currentUserId: string;
   activeProfiles: ActiveProfile[];
-  columnCount: number;
 }) {
   const vendors = new Set(items.map((item) => item.vendor ?? "Unknown vendor"));
   const vendorLabel = vendors.size > 1 ? "Multiple vendors" : (items[0].vendor ?? "Unknown vendor");
@@ -353,22 +355,12 @@ function GroupRows({
   return (
     <>
       <tr className="border-b border-border bg-bg">
-        <td colSpan={columnCount} className="px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+        {canManage && <td className="px-3.5 py-1.5" />}
+        <td colSpan={4} className="px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
           {vendorLabel} order · {formatDate(date)}
-          {receiptUrl && (
-            <>
-              {" · "}
-              <a
-                href={receiptUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="normal-case tracking-normal text-accent hover:underline"
-              >
-                📎 view receipt
-              </a>
-            </>
-          )}
         </td>
+        <td className="px-3.5 py-1.5">{receiptUrl && <ReceiptPill href={receiptUrl} />}</td>
+        <td colSpan={2} className="px-3.5 py-1.5" />
       </tr>
 
       {items.map((item) => (
@@ -486,16 +478,7 @@ function ItemCard({
                 </>
               )}
             </span>
-            {showReceipt && item.receiptUrl && (
-              <a
-                href={item.receiptUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-border bg-bg px-2 py-0.5 text-[11px] text-text-muted hover:border-accent hover:text-accent"
-              >
-                📎 view
-              </a>
-            )}
+            {showReceipt && item.receiptUrl && <ReceiptPill href={item.receiptUrl} />}
             {item.checked_by_name && <span>Verified by {item.checked_by_name}</span>}
           </div>
 
@@ -538,16 +521,7 @@ function GroupCards({
         <span>
           {vendorLabel} order · {formatDate(date)}
         </span>
-        {receiptUrl && (
-          <a
-            href={receiptUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="normal-case tracking-normal text-accent hover:underline"
-          >
-            📎 view receipt
-          </a>
-        )}
+        {receiptUrl && <ReceiptPill href={receiptUrl} />}
       </div>
 
       <div className="flex flex-col gap-2">
