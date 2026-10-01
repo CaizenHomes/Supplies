@@ -1,22 +1,40 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { markOrdered, type MarkOrderedActionState } from "@/lib/actions/order-actions";
+import { TaxInputs } from "@/components/orders/tax-inputs";
 
 const INITIAL_STATE: MarkOrderedActionState = {};
 
-export function MarkOrderedModal({ itemId }: { itemId: string }) {
+export function MarkOrderedModal({
+  itemId,
+  module,
+}: {
+  itemId: string;
+  module: "groceries" | "supplies";
+}) {
   const [open, setOpen] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [state, formAction, isPending] = useActionState(markOrdered, INITIAL_STATE);
   const [handledState, setHandledState] = useState(state);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   if (state !== handledState) {
     setHandledState(state);
     if (state.success) {
       setOpen(false);
       setFileName(null);
+    }
+  }
+
+  // If the order was saved but its tax wasn't, the server skipped refreshing the list so
+  // this message stays visible; pick up the now-ordered item once the dialog is closed.
+  function close() {
+    setOpen(false);
+    if (state.orderSaved) {
+      router.refresh();
     }
   }
 
@@ -33,11 +51,12 @@ export function MarkOrderedModal({ itemId }: { itemId: string }) {
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(16,24,40,0.4)] p-modal-backdrop py-6 sm:items-center sm:p-modal-backdrop-lg"
-          onClick={(event) => event.target === event.currentTarget && setOpen(false)}
+          onClick={(event) => event.target === event.currentTarget && close()}
         >
           <div className="w-full max-w-md rounded-xl bg-surface shadow-md sm:max-h-[90vh] sm:overflow-y-auto">
             <form action={formAction}>
               <input type="hidden" name="item_id" value={itemId} />
+              <input type="hidden" name="module" value={module} />
 
               <div className="border-b border-border px-modal-pad py-5 sm:px-modal-pad-lg">
                 <h2 className="text-[17px] font-semibold text-text">Mark as ordered</h2>
@@ -71,24 +90,32 @@ export function MarkOrderedModal({ itemId }: { itemId: string }) {
                   Any file works. Filename will be saved with the record.
                 </p>
 
+                {module === "groceries" && (
+                  <div className="mt-4">
+                    <TaxInputs idPrefix={`mark-ordered-${itemId}`} />
+                  </div>
+                )}
+
                 {state.error && <p className="mt-3 text-sm text-danger">{state.error}</p>}
               </div>
 
               <div className="flex flex-col-reverse justify-end gap-2 rounded-b-xl border-t border-border bg-[#fafbfc] px-modal-pad py-3.5 sm:flex-row sm:px-modal-pad-lg">
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={close}
                   className="rounded-md border border-border-strong bg-surface px-3.5 py-3 text-sm font-medium text-text hover:bg-bg sm:py-2"
                 >
-                  Cancel
+                  {state.orderSaved ? "Close" : "Cancel"}
                 </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:py-2"
-                >
-                  {isPending ? "Confirming…" : "Confirm order"}
-                </button>
+                {!state.orderSaved && (
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:py-2"
+                  >
+                    {isPending ? "Confirming…" : "Confirm order"}
+                  </button>
+                )}
               </div>
             </form>
           </div>

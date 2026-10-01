@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getReceiptSignedUrl } from "@/lib/receipts";
+import { getOrderTaxData } from "@/lib/order-taxes";
 import { HistoryFilter } from "@/components/history-filter";
 import { HistoryTable } from "@/components/history-table";
 
@@ -34,12 +35,16 @@ export default async function GroceriesHistoryPage({
     .in("status", statuses)
     .order("updated_at", { ascending: false });
 
-  const history = await Promise.all(
-    (items ?? []).map(async (item) => ({
-      ...item,
-      receiptUrl: item.receipt_path ? await getReceiptSignedUrl(item.receipt_path) : null,
-    })),
-  );
+  const [history, orderTaxData] = await Promise.all([
+    Promise.all(
+      (items ?? []).map(async (item) => ({
+        ...item,
+        receiptUrl: item.receipt_path ? await getReceiptSignedUrl(item.receipt_path) : null,
+      })),
+    ),
+    getOrderTaxData((items ?? []).map((item) => item.receipt_path)),
+  ]);
+  const canManage = profile.role === "manager" || profile.role === "executive";
 
   return (
     <section>
@@ -68,7 +73,7 @@ export default async function GroceriesHistoryPage({
           <p>Received, rejected, and cancelled items appear here.</p>
         </div>
       ) : (
-        <HistoryTable items={history} />
+        <HistoryTable items={history} orderTaxData={orderTaxData} canManage={canManage} />
       )}
     </section>
   );

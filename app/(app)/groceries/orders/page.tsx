@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getReceiptSignedUrl } from "@/lib/receipts";
+import { getOrderTaxData } from "@/lib/order-taxes";
 import { OrderTable } from "@/components/orders/order-table";
 
 const ORDER_STATUSES = ["in_list", "ordered"] as const;
@@ -35,12 +36,15 @@ export default async function GroceriesOrdersPage() {
     return (b.promoted_at ?? "").localeCompare(a.promoted_at ?? "");
   });
 
-  const orders = await Promise.all(
-    sorted.map(async (item) => ({
-      ...item,
-      receiptUrl: item.receipt_path ? await getReceiptSignedUrl(item.receipt_path) : null,
-    })),
-  );
+  const [orders, orderTaxData] = await Promise.all([
+    Promise.all(
+      sorted.map(async (item) => ({
+        ...item,
+        receiptUrl: item.receipt_path ? await getReceiptSignedUrl(item.receipt_path) : null,
+      })),
+    ),
+    getOrderTaxData(sorted.map((item) => item.receipt_path)),
+  ]);
 
   return (
     <section>
@@ -63,6 +67,7 @@ export default async function GroceriesOrdersPage() {
           canManage={canManage}
           currentUserId={profile.id}
           activeProfiles={activeProfiles ?? []}
+          orderTaxData={orderTaxData}
         />
       )}
     </section>

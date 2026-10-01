@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { receiptStoragePath } from "@/lib/receipts";
+import { parseTaxInput, type OrderTax } from "@/lib/order-totals";
 
 // Shared by both the Groceries and Supplies Order List pages — the underlying RPCs
 // (mark_ordered/mark_received/cancel_item) are module-agnostic, so one copy of this
@@ -18,9 +19,43 @@ function revalidateHistoryPaths() {
   revalidatePath("/supplies/history");
 }
 
+// Order tax changes what the Groceries budget bar shows (budget_spent includes it), so
+// refresh the whole Groceries layout, which also covers its Order List and History pages.
+function revalidateGroceriesLayout() {
+  revalidatePath("/groceries", "layout");
+}
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+const TAX_NOT_SAVED = "Order saved, but tax wasn't — use Edit tax.";
+
+// Only the Groceries mark-ordered dialogs send module=groceries and the optional GST/PST
+// fields; Supplies orders never carry tax. Returns null when both fields are blank.
+function readOrderTax(formData: FormData): { tax: OrderTax | null; error?: string } {
+  if (formData.get("module") !== "groceries") return { tax: null };
+
+  const gst = parseTaxInput(formData.get("gst"), "GST");
+  if (gst.error !== undefined) return { tax: null, error: gst.error };
+  const pst = parseTaxInput(formData.get("pst"), "PST");
+  if (pst.error !== undefined) return { tax: null, error: pst.error };
+
+  if (gst.value === null && pst.value === null) return { tax: null };
+  return { tax: { gst: gst.value, pst: pst.value } };
+}
+
+async function saveOrderTax(supabase: SupabaseServerClient, receiptPath: string, tax: OrderTax) {
+  const { error } = await supabase
+    .from("order_taxes")
+    .upsert({ receipt_path: receiptPath, gst: tax.gst, pst: tax.pst }, { onConflict: "receipt_path" });
+  return error;
+}
+
 export type MarkOrderedActionState = {
   error?: string;
   success?: boolean;
+  // Set when the order itself was saved but its tax wasn't (a separate step), so the
+  // dialog can show the error without offering to submit the order again.
+  orderSaved?: boolean;
 };
 
 export async function markOrdered(
@@ -32,6 +67,11 @@ export async function markOrdered(
 
   if (!(file instanceof File) || file.size === 0) {
     return { error: "Please attach a receipt or PO." };
+  }
+
+  const { tax, error: taxError } = readOrderTax(formData);
+  if (taxError) {
+    return { error: taxError };
   }
 
   const supabase = await createClient();
@@ -52,6 +92,16 @@ export async function markOrdered(
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (tax) {
+    const taxSaveError = await saveOrderTax(supabase, path, tax);
+    if (taxSaveError) {
+      // No revalidation here: refreshing would move the item out of the in-list section and
+      // unmount the dialog before the message is seen. The dialog refreshes on close.
+      return { error: TAX_NOT_SAVED, orderSaved: true };
+    }
+    revalidateGroceriesLayout();
   }
 
   revalidateOrderPaths();
@@ -92,6 +142,7 @@ export async function markReceived(
 export type MarkOrderedBatchActionState = {
   error?: string;
   success?: boolean;
+  orderSaved?: boolean;
 };
 
 export async function markOrderedBatch(
@@ -106,6 +157,11 @@ export async function markOrderedBatch(
   }
   if (!(file instanceof File) || file.size === 0) {
     return { error: "Please attach a receipt or PO." };
+  }
+
+  const { tax, error: taxError } = readOrderTax(formData);
+  if (taxError) {
+    return { error: taxError };
   }
 
   const supabase = await createClient();
@@ -128,7 +184,51 @@ export async function markOrderedBatch(
     return { error: error.message };
   }
 
+  if (tax) {
+    const taxSaveError = await saveOrderTax(supabase, path, tax);
+    if (taxSaveError) {
+      // See markOrdered: the dialog refreshes the page on close instead.
+      return { error: TAX_NOT_SAVED, orderSaved: true };
+    }
+    revalidateGroceriesLayout();
+  }
+
   revalidateOrderPaths();
+  return { success: true };
+}
+
+export type UpdateOrderTaxActionState = {
+  error?: string;
+  success?: boolean;
+};
+
+// Add or change GST/PST on an existing Groceries order (after ordering or after receiving).
+// RLS on order_taxes enforces the role (manager/executive) and that the receipt belongs to
+// Groceries items; blank fields clear that tax back to $0.
+export async function updateOrderTax(
+  _prevState: UpdateOrderTaxActionState,
+  formData: FormData,
+): Promise<UpdateOrderTaxActionState> {
+  const receiptPath = String(formData.get("receipt_path") ?? "");
+  if (!receiptPath) {
+    return { error: "Missing order." };
+  }
+
+  const gst = parseTaxInput(formData.get("gst"), "GST");
+  if (gst.error !== undefined) return { error: gst.error };
+  const pst = parseTaxInput(formData.get("pst"), "PST");
+  if (pst.error !== undefined) return { error: pst.error };
+
+  const supabase = await createClient();
+  const error = await saveOrderTax(supabase, receiptPath, { gst: gst.value, pst: pst.value });
+
+  if (error) {
+    return {
+      error: error.code === "42501" ? "You don't have permission to edit tax on this order." : error.message,
+    };
+  }
+
+  revalidateGroceriesLayout();
   return { success: true };
 }
 

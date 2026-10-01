@@ -1,5 +1,16 @@
+import type { ReactNode } from "react";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { buildReceiptRenderUnits } from "@/lib/receipt-groups";
+import {
+  formatCents,
+  groupOrderItems,
+  itemCents,
+  orderTotals,
+  type OrderTaxData,
+  type OrderTaxInfo,
+} from "@/lib/order-totals";
+import { EditTaxModal } from "@/components/orders/edit-tax-modal";
+import { OrderTaxInline, OrderTaxLines, showOrderTax } from "@/components/orders/order-tax-summary";
 import type { Tables } from "@/lib/types";
 
 type HistoryRow = Tables<"items_detailed"> & { receiptUrl: string | null };
@@ -42,6 +53,77 @@ function groupByVendor(items: HistoryRow[]) {
       const subtotal = totals.length > 0 ? totals.reduce((sum, total) => sum + total, 0) : null;
       return { vendor, items: vendorItems, countedCount: countedItems.length, subtotal };
     });
+}
+
+type VendorGroup = ReturnType<typeof groupByVendor>[number];
+
+type HistoryOrder = OrderTaxInfo & { countedCount: number };
+
+// Order-level tax for Groceries History. Undefined for Supplies, which then renders exactly
+// as it always has.
+type TaxContext = {
+  canManage: boolean;
+  orders: Map<string, HistoryOrder>;
+  // The vendor group an order's tax (and its order-level summary) belongs to: the
+  // alphabetically first vendor among its counted items, or among all its items if none
+  // count. An order whose items span vendors therefore contributes its tax exactly once.
+  homeVendor: Map<string, string>;
+};
+
+// Built from every item on each order (orderTaxData.orderItems), not just the rows the
+// current filter shows, so totals and the home vendor are the same under any filter.
+function buildTaxContext({ taxes, orderItems: allOrderItems }: OrderTaxData, canManage: boolean): TaxContext {
+  const orders = new Map<string, HistoryOrder>();
+  const homeVendor = new Map<string, string>();
+  for (const [receiptPath, orderItems] of groupOrderItems(allOrderItems)) {
+    const counted = orderItems.filter((item) => item.counts_as_spent);
+    const vendors = (counted.length > 0 ? counted : orderItems)
+      .map((item) => item.vendor ?? "Unknown vendor")
+      .sort((a, b) => a.localeCompare(b));
+    homeVendor.set(receiptPath, vendors[0]);
+
+    const tax = taxes[receiptPath];
+    orders.set(receiptPath, {
+      receiptPath,
+      tax,
+      totals: orderTotals(orderItems, tax),
+      countedCount: counted.length,
+    });
+  }
+
+  return { canManage, orders, homeVendor };
+}
+
+// The order whose tax summary renders in this vendor group, if any.
+function orderInGroup(
+  receiptPath: string | null,
+  vendor: string,
+  taxContext: TaxContext | undefined,
+): HistoryOrder | undefined {
+  if (!taxContext || !receiptPath || taxContext.homeVendor.get(receiptPath) !== vendor) return undefined;
+  return taxContext.orders.get(receiptPath);
+}
+
+function vendorMoney(group: VendorGroup, taxContext: TaxContext) {
+  const subtotalCents = group.items
+    .filter((item) => item.counts_as_spent)
+    .reduce((sum, item) => sum + (itemCents(item) ?? 0), 0);
+
+  // Only orders with a counted item shown in this group, so the Tax line always matches the
+  // rows the current filter displays (e.g. a cancelled-only filter shows $0 tax).
+  const shownCountedReceipts = new Set(
+    group.items.filter((item) => item.counts_as_spent).map((item) => item.receipt_path),
+  );
+
+  let taxCents = 0;
+  for (const [receiptPath, vendor] of taxContext.homeVendor) {
+    const order = taxContext.orders.get(receiptPath);
+    if (vendor === group.vendor && order?.totals.taxCounts && shownCountedReceipts.has(receiptPath)) {
+      taxCents += order.totals.gstCents + order.totals.pstCents;
+    }
+  }
+
+  return { subtotalCents, taxCents, totalCents: subtotalCents + taxCents };
 }
 
 function ReceiptPill({ href }: { href: string }) {
@@ -106,6 +188,50 @@ function itemRow(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } = 
   );
 }
 
+// One line of a footer (order or vendor group) with its amount in the Total column.
+function footerRow(
+  key: string,
+  label: string,
+  amount: string,
+  { count, emphasis, last, trailing }: { count?: string; emphasis?: boolean; last?: boolean; trailing?: ReactNode } = {},
+) {
+  const pad = last ? "pb-2 pt-1" : "pb-0 pt-1.5";
+  return (
+    <tr key={key} className={last ? "border-b border-border bg-bg" : "bg-bg"}>
+      <td className={`px-3.5 ${pad} text-xs font-semibold ${emphasis ? "text-text" : "text-text-muted"}`}>{label}</td>
+      <td className={`px-3.5 ${pad} text-right text-xs font-semibold tabular-nums text-text-muted`}>{count}</td>
+      <td className={`px-3.5 ${pad} text-right text-xs tabular-nums text-text ${emphasis ? "font-semibold" : ""}`}>
+        {amount}
+      </td>
+      <td colSpan={4} className={`px-3.5 ${pad} text-right`}>
+        {trailing}
+      </td>
+    </tr>
+  );
+}
+
+// Subtotal / GST / PST / Order total under a multi-item order's rows (Groceries only).
+function orderFooterRows(key: string, order: HistoryOrder, canManage: boolean) {
+  const { totals } = order;
+  return [
+    footerRow(`${key}__subtotal`, "Subtotal", formatCents(totals.subtotalCents), {
+      count: `${order.countedCount} item${order.countedCount === 1 ? "" : "s"}`,
+    }),
+    footerRow(`${key}__gst`, "GST", formatCents(totals.gstCents)),
+    footerRow(`${key}__pst`, "PST", formatCents(totals.pstCents)),
+    footerRow(
+      `${key}__total`,
+      totals.taxCounts ? "Order total" : "Order total (tax not counted — order cancelled)",
+      formatCents(totals.totalCents),
+      {
+        emphasis: true,
+        last: true,
+        trailing: canManage ? <EditTaxModal receiptPath={order.receiptPath} tax={order.tax} /> : undefined,
+      },
+    ),
+  ];
+}
+
 // Mobile card equivalent of itemRow — same data, reflowed vertically.
 function itemCard(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } = {}) {
   const total = rowTotal(item);
@@ -157,7 +283,7 @@ function itemCard(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } =
 }
 
 // Mobile card equivalent of a vendor group — header, nested order sub-groups, subtotal.
-function GroupCard({ group }: { group: ReturnType<typeof groupByVendor>[number] }) {
+function GroupCard({ group, taxContext }: { group: VendorGroup; taxContext?: TaxContext }) {
   const units = buildReceiptRenderUnits(group.items, (item) => item.checked_at);
 
   return (
@@ -169,10 +295,25 @@ function GroupCard({ group }: { group: ReturnType<typeof groupByVendor>[number] 
       <div className="flex flex-col gap-2">
         {units.flatMap((unit) => {
           if (unit.kind === "row") {
-            return [itemCard(unit.item)];
+            const order = orderInGroup(unit.item.receipt_path, group.vendor, taxContext);
+            if (!order || !showOrderTax(order.totals, taxContext!.canManage)) {
+              return [itemCard(unit.item)];
+            }
+            return [
+              itemCard(unit.item),
+              <div key={`${unit.key}__tax`} className="pl-1">
+                <OrderTaxInline
+                  totals={order.totals}
+                  receiptPath={order.receiptPath}
+                  tax={order.tax}
+                  canManage={taxContext!.canManage}
+                />
+              </div>,
+            ];
           }
 
           const receiptUrl = unit.items.find((item) => item.receiptUrl)?.receiptUrl ?? null;
+          const order = orderInGroup(unit.key, group.vendor, taxContext);
           return [
             <div
               key={`${unit.key}__sub-header`}
@@ -182,30 +323,74 @@ function GroupCard({ group }: { group: ReturnType<typeof groupByVendor>[number] 
               {receiptUrl && <ReceiptPill href={receiptUrl} />}
             </div>,
             ...unit.items.map((item) => itemCard(item, { hideReceipt: true })),
+            ...(order
+              ? [
+                  <div key={`${unit.key}__tax`} className="pl-1">
+                    <OrderTaxLines totals={order.totals} itemCount={order.countedCount} />
+                    {taxContext!.canManage && (
+                      <div className="mt-1.5">
+                        <EditTaxModal receiptPath={order.receiptPath} tax={order.tax} />
+                      </div>
+                    )}
+                  </div>,
+                ]
+              : []),
           ];
         })}
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2 text-xs font-semibold text-text-muted">
-        <span>
-          Subtotal · {group.countedCount} item{group.countedCount === 1 ? "" : "s"}
-        </span>
-        <span className="tabular-nums text-text">
-          {group.subtotal === null ? "—" : formatCurrency(group.subtotal)}
-        </span>
-      </div>
+      {taxContext ? (
+        <VendorMoneyLines group={group} taxContext={taxContext} />
+      ) : (
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2 text-xs font-semibold text-text-muted">
+          <span>
+            Subtotal · {group.countedCount} item{group.countedCount === 1 ? "" : "s"}
+          </span>
+          <span className="tabular-nums text-text">
+            {group.subtotal === null ? "—" : formatCurrency(group.subtotal)}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
 
-export function HistoryTable({ items }: { items: HistoryRow[] }) {
+// Mobile vendor-group footer with tax: Subtotal / Tax / Total.
+function VendorMoneyLines({ group, taxContext }: { group: VendorGroup; taxContext: TaxContext }) {
+  const money = vendorMoney(group, taxContext);
+  return (
+    <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 border-t border-border pt-2 text-xs font-semibold text-text-muted">
+      <dt>
+        Subtotal · {group.countedCount} item{group.countedCount === 1 ? "" : "s"}
+      </dt>
+      <dd className="text-right tabular-nums text-text">{formatCents(money.subtotalCents)}</dd>
+      <dt>Tax</dt>
+      <dd className="text-right tabular-nums text-text">{formatCents(money.taxCents)}</dd>
+      <dt className="text-text">Total</dt>
+      <dd className="text-right tabular-nums text-text">{formatCents(money.totalCents)}</dd>
+    </dl>
+  );
+}
+
+export function HistoryTable({
+  items,
+  orderTaxData,
+  canManage = false,
+}: {
+  items: HistoryRow[];
+  // Order-level GST/PST plus every item on the displayed orders. Only Groceries History
+  // passes this; when it's undefined (Supplies) no tax UI renders at all.
+  orderTaxData?: OrderTaxData;
+  canManage?: boolean;
+}) {
   const groups = groupByVendor(items);
+  const taxContext = orderTaxData ? buildTaxContext(orderTaxData, canManage) : undefined;
 
   return (
     <>
       <div className="flex flex-col gap-3 md:hidden">
         {groups.map((group) => (
-          <GroupCard key={group.vendor} group={group} />
+          <GroupCard key={group.vendor} group={group} taxContext={taxContext} />
         ))}
       </div>
 
@@ -251,10 +436,27 @@ export function HistoryTable({ items }: { items: HistoryRow[] }) {
               </tr>,
               ...units.flatMap((unit) => {
                 if (unit.kind === "row") {
-                  return [itemRow(unit.item)];
+                  const order = orderInGroup(unit.item.receipt_path, group.vendor, taxContext);
+                  if (!order || !showOrderTax(order.totals, taxContext!.canManage)) {
+                    return [itemRow(unit.item)];
+                  }
+                  return [
+                    itemRow(unit.item),
+                    <tr key={`${unit.key}__tax`} className="border-b border-border bg-bg">
+                      <td colSpan={7} className="px-3.5 py-2 pl-7">
+                        <OrderTaxInline
+                          totals={order.totals}
+                          receiptPath={order.receiptPath}
+                          tax={order.tax}
+                          canManage={taxContext!.canManage}
+                        />
+                      </td>
+                    </tr>,
+                  ];
                 }
 
                 const receiptUrl = unit.items.find((item) => item.receiptUrl)?.receiptUrl ?? null;
+                const order = orderInGroup(unit.key, group.vendor, taxContext);
                 return [
                   <tr key={`${unit.key}__sub-header`} className="border-b border-border bg-bg">
                     <td
@@ -267,18 +469,35 @@ export function HistoryTable({ items }: { items: HistoryRow[] }) {
                     <td colSpan={2} className="px-3.5 py-1" />
                   </tr>,
                   ...unit.items.map((item) => itemRow(item, { hideReceipt: true })),
+                  ...(order ? orderFooterRows(unit.key, order, taxContext!.canManage) : []),
                 ];
               }),
-              <tr key={`${group.vendor}__subtotal`} className="border-b border-border bg-bg">
-                <td className="px-3.5 py-2 text-xs font-semibold text-text-muted">Subtotal</td>
-                <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text-muted">
-                  {group.countedCount} item{group.countedCount === 1 ? "" : "s"}
-                </td>
-                <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text">
-                  {group.subtotal === null ? "—" : formatCurrency(group.subtotal)}
-                </td>
-                <td colSpan={4} className="px-3.5 py-2" />
-              </tr>,
+              ...(taxContext
+                ? (() => {
+                    const money = vendorMoney(group, taxContext);
+                    return [
+                      footerRow(`${group.vendor}__subtotal`, "Subtotal", formatCents(money.subtotalCents), {
+                        count: `${group.countedCount} item${group.countedCount === 1 ? "" : "s"}`,
+                      }),
+                      footerRow(`${group.vendor}__tax`, "Tax", formatCents(money.taxCents)),
+                      footerRow(`${group.vendor}__total`, "Total", formatCents(money.totalCents), {
+                        emphasis: true,
+                        last: true,
+                      }),
+                    ];
+                  })()
+                : [
+                    <tr key={`${group.vendor}__subtotal`} className="border-b border-border bg-bg">
+                      <td className="px-3.5 py-2 text-xs font-semibold text-text-muted">Subtotal</td>
+                      <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text-muted">
+                        {group.countedCount} item{group.countedCount === 1 ? "" : "s"}
+                      </td>
+                      <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text">
+                        {group.subtotal === null ? "—" : formatCurrency(group.subtotal)}
+                      </td>
+                      <td colSpan={4} className="px-3.5 py-2" />
+                    </tr>,
+                  ]),
             ];
             return rows;
           })}

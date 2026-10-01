@@ -1,12 +1,21 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { formatCurrency, formatDate, initials } from "@/lib/format";
 import { buildReceiptRenderUnits } from "@/lib/receipt-groups";
+import {
+  formatCents,
+  groupOrderItems,
+  orderTotals,
+  type OrderTaxData,
+  type OrderTaxInfo,
+} from "@/lib/order-totals";
 import { MarkOrderedModal } from "@/components/orders/mark-ordered-modal";
 import { MarkReceivedButton } from "@/components/orders/mark-received-button";
 import { CancelButton } from "@/components/orders/cancel-button";
 import { BulkActionBar } from "@/components/orders/bulk-action-bar";
+import { EditTaxModal } from "@/components/orders/edit-tax-modal";
+import { OrderTaxInline, OrderTaxLines, showOrderTax } from "@/components/orders/order-tax-summary";
 import type { Tables } from "@/lib/types";
 
 type OrderRow = Tables<"items_detailed"> & { receiptUrl: string | null };
@@ -32,14 +41,28 @@ export function OrderTable({
   canManage,
   currentUserId,
   activeProfiles,
+  orderTaxData,
 }: {
   module: "groceries" | "supplies";
   orders: OrderRow[];
   canManage: boolean;
   currentUserId: string;
   activeProfiles: ActiveProfile[];
+  // Order-level GST/PST plus every item on the displayed orders. Only the Groceries page
+  // passes this; when it's undefined (Supplies) no order-level tax UI renders at all.
+  orderTaxData?: OrderTaxData;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Order totals are computed per receipt from all of the order's items (not per rendered
+  // row), so an order whose other items were cancelled still shows its full tax.
+  const itemsByReceipt = groupOrderItems(orderTaxData?.orderItems ?? []);
+
+  function orderTaxInfo(receiptPath: string | null): OrderTaxInfo | undefined {
+    if (!orderTaxData || !receiptPath) return undefined;
+    const tax = orderTaxData.taxes[receiptPath];
+    return { receiptPath, tax, totals: orderTotals(itemsByReceipt.get(receiptPath) ?? [], tax) };
+  }
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -61,7 +84,7 @@ export function OrderTable({
   return (
     <>
       {canManage && selectedIds.length > 0 && (
-        <BulkActionBar selectedIds={selectedIds} onDone={() => setSelected(new Set())} />
+        <BulkActionBar module={module} selectedIds={selectedIds} onDone={() => setSelected(new Set())} />
       )}
 
       <div className="flex flex-col gap-3 md:hidden">
@@ -76,7 +99,7 @@ export function OrderTable({
             actions={
               canManage ? (
                 <>
-                  <MarkOrderedModal itemId={item.id!} />
+                  <MarkOrderedModal itemId={item.id!} module={module} />
                   <CancelButton itemId={item.id!} itemName={item.name ?? "this item"} />
                 </>
               ) : null
@@ -91,6 +114,7 @@ export function OrderTable({
               key={unit.key}
               item={unit.item}
               module={module}
+              footer={singleOrderTax(orderTaxInfo(unit.item.receipt_path), canManage)}
               actions={
                 canManage ? (
                   <>
@@ -116,6 +140,7 @@ export function OrderTable({
               canManage={canManage}
               currentUserId={currentUserId}
               activeProfiles={activeProfiles}
+              orderTax={orderTaxInfo(unit.key)}
             />
           ),
         )}
@@ -168,7 +193,7 @@ export function OrderTable({
                 actions={
                   canManage ? (
                     <>
-                      <MarkOrderedModal itemId={item.id!} />
+                      <MarkOrderedModal itemId={item.id!} module={module} />
                       <CancelButton itemId={item.id!} itemName={item.name ?? "this item"} />
                     </>
                   ) : null
@@ -177,41 +202,56 @@ export function OrderTable({
               />
             ))}
 
-            {orderedUnits.map((unit) =>
-              unit.kind === "row" ? (
-                <ItemRow
-                  key={unit.key}
-                  item={unit.item}
-                  module={module}
-                  canManage={canManage}
-                  actions={
-                    canManage ? (
-                      <>
-                        <MarkReceivedButton
-                          itemIds={[unit.item.id!]}
-                          itemName={unit.item.name ?? undefined}
-                          module={module}
-                          currentUserId={currentUserId}
-                          activeProfiles={activeProfiles}
-                        />
-                        <CancelButton itemId={unit.item.id!} itemName={unit.item.name ?? "this item"} />
-                      </>
-                    ) : null
-                  }
-                  showReceipt
-                />
-              ) : (
-                <GroupRows
-                  key={unit.key}
-                  items={unit.items}
-                  date={unit.date}
-                  module={module}
-                  canManage={canManage}
-                  currentUserId={currentUserId}
-                  activeProfiles={activeProfiles}
-                />
-              ),
-            )}
+            {orderedUnits.map((unit) => {
+              if (unit.kind === "group") {
+                return (
+                  <GroupRows
+                    key={unit.key}
+                    items={unit.items}
+                    date={unit.date}
+                    module={module}
+                    canManage={canManage}
+                    currentUserId={currentUserId}
+                    activeProfiles={activeProfiles}
+                    orderTax={orderTaxInfo(unit.key)}
+                  />
+                );
+              }
+
+              const taxSummary = singleOrderTax(orderTaxInfo(unit.item.receipt_path), canManage);
+              return (
+                <Fragment key={unit.key}>
+                  <ItemRow
+                    item={unit.item}
+                    module={module}
+                    canManage={canManage}
+                    actions={
+                      canManage ? (
+                        <>
+                          <MarkReceivedButton
+                            itemIds={[unit.item.id!]}
+                            itemName={unit.item.name ?? undefined}
+                            module={module}
+                            currentUserId={currentUserId}
+                            activeProfiles={activeProfiles}
+                          />
+                          <CancelButton itemId={unit.item.id!} itemName={unit.item.name ?? "this item"} />
+                        </>
+                      ) : null
+                    }
+                    showReceipt
+                  />
+                  {taxSummary && (
+                    <tr className="border-b border-border bg-bg">
+                      {canManage && <td className="px-3.5 py-2" />}
+                      <td colSpan={7} className="px-3.5 py-2">
+                        {taxSummary}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -229,6 +269,15 @@ function ReceiptPill({ href }: { href: string }) {
     >
       📎 view
     </a>
+  );
+}
+
+// Order-level summary for an order rendered as a single item row/card; null when there's
+// nothing to show (Supplies, or no tax entered and the viewer can't add it).
+function singleOrderTax(info: OrderTaxInfo | undefined, canManage: boolean): ReactNode {
+  if (!info || !showOrderTax(info.totals, canManage)) return null;
+  return (
+    <OrderTaxInline totals={info.totals} receiptPath={info.receiptPath} tax={info.tax} canManage={canManage} />
   );
 }
 
@@ -335,6 +384,7 @@ function GroupRows({
   canManage,
   currentUserId,
   activeProfiles,
+  orderTax,
 }: {
   items: OrderRow[];
   date: string | null;
@@ -342,6 +392,7 @@ function GroupRows({
   canManage: boolean;
   currentUserId: string;
   activeProfiles: ActiveProfile[];
+  orderTax?: OrderTaxInfo;
 }) {
   const vendors = new Set(items.map((item) => item.vendor ?? "Unknown vendor"));
   const vendorLabel = vendors.size > 1 ? "Multiple vendors" : (items[0].vendor ?? "Unknown vendor");
@@ -351,6 +402,15 @@ function GroupRows({
     ? (totals as number[]).reduce((sum, total) => sum + total, 0)
     : null;
   const itemIds = items.map((item) => item.id!);
+  const markReceived = canManage && (
+    <MarkReceivedButton
+      itemIds={itemIds}
+      module={module}
+      currentUserId={currentUserId}
+      activeProfiles={activeProfiles}
+      label="Mark received"
+    />
+  );
 
   return (
     <>
@@ -374,28 +434,75 @@ function GroupRows({
         />
       ))}
 
-      <tr className="border-b border-border bg-bg">
-        {canManage && <td className="px-3.5 py-2" />}
-        <td className="px-3.5 py-2 text-xs font-semibold text-text-muted">Subtotal</td>
-        <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text-muted">
-          {items.length} items
-        </td>
-        <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text">
-          {subtotal === null ? "—" : formatCurrency(subtotal)}
-        </td>
-        <td colSpan={4} className="px-3.5 py-2 text-right">
-          {canManage && (
-            <MarkReceivedButton
-              itemIds={itemIds}
-              module={module}
-              currentUserId={currentUserId}
-              activeProfiles={activeProfiles}
-              label="Mark received"
-            />
-          )}
-        </td>
-      </tr>
+      {orderTax ? (
+        <>
+          <OrderFooterRow canManage={canManage} label="Subtotal" count={`${items.length} items`}>
+            {formatCents(orderTax.totals.subtotalCents)}
+          </OrderFooterRow>
+          <OrderFooterRow canManage={canManage} label="GST">
+            {formatCents(orderTax.totals.gstCents)}
+          </OrderFooterRow>
+          <OrderFooterRow canManage={canManage} label="PST">
+            {formatCents(orderTax.totals.pstCents)}
+          </OrderFooterRow>
+          <tr className="border-b border-border bg-bg">
+            {canManage && <td className="px-3.5 pb-2 pt-1" />}
+            <td className="px-3.5 pb-2 pt-1 text-xs font-semibold text-text">Order total</td>
+            <td className="px-3.5 pb-2 pt-1" />
+            <td className="px-3.5 pb-2 pt-1 text-right text-xs font-semibold tabular-nums text-text">
+              {formatCents(orderTax.totals.totalCents)}
+            </td>
+            <td colSpan={4} className="px-3.5 pb-2 pt-1 text-right">
+              {canManage && (
+                <div className="flex items-center justify-end gap-2">
+                  <EditTaxModal receiptPath={orderTax.receiptPath} tax={orderTax.tax} />
+                  {markReceived}
+                </div>
+              )}
+            </td>
+          </tr>
+        </>
+      ) : (
+        <tr className="border-b border-border bg-bg">
+          {canManage && <td className="px-3.5 py-2" />}
+          <td className="px-3.5 py-2 text-xs font-semibold text-text-muted">Subtotal</td>
+          <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text-muted">
+            {items.length} items
+          </td>
+          <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text">
+            {subtotal === null ? "—" : formatCurrency(subtotal)}
+          </td>
+          <td colSpan={4} className="px-3.5 py-2 text-right">
+            {markReceived}
+          </td>
+        </tr>
+      )}
     </>
+  );
+}
+
+// One Subtotal/GST/PST line of a multi-item order's footer, amount in the Total column.
+function OrderFooterRow({
+  canManage,
+  label,
+  count,
+  children,
+}: {
+  canManage: boolean;
+  label: string;
+  count?: string;
+  children: ReactNode;
+}) {
+  return (
+    <tr className="bg-bg">
+      {canManage && <td className="px-3.5 pb-0 pt-1.5" />}
+      <td className="px-3.5 pb-0 pt-1.5 text-xs font-semibold text-text-muted">{label}</td>
+      <td className="px-3.5 pb-0 pt-1.5 text-right text-xs font-semibold tabular-nums text-text-muted">
+        {count}
+      </td>
+      <td className="px-3.5 pb-0 pt-1.5 text-right text-xs tabular-nums text-text">{children}</td>
+      <td colSpan={4} className="px-3.5 pb-0 pt-1.5" />
+    </tr>
   );
 }
 
@@ -406,12 +513,15 @@ function ItemCard({
   checkbox,
   actions,
   showReceipt,
+  footer,
 }: {
   item: OrderRow;
   module: "groceries" | "supplies";
   checkbox?: { checked: boolean; onToggle: () => void };
   actions: ReactNode;
   showReceipt: boolean;
+  // Order-level tax summary when this card is a whole single-item order (Groceries only).
+  footer?: ReactNode;
 }) {
   const total = rowTotal(item);
   const requesterName = item.requested_by_name ?? "Unknown";
@@ -482,6 +592,8 @@ function ItemCard({
             {item.checked_by_name && <span>Verified by {item.checked_by_name}</span>}
           </div>
 
+          {footer && <div className="mt-2">{footer}</div>}
+
           {actions && <div className="mt-3 flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
       </div>
@@ -498,6 +610,7 @@ function GroupCards({
   canManage,
   currentUserId,
   activeProfiles,
+  orderTax,
 }: {
   items: OrderRow[];
   date: string | null;
@@ -505,6 +618,7 @@ function GroupCards({
   canManage: boolean;
   currentUserId: string;
   activeProfiles: ActiveProfile[];
+  orderTax?: OrderTaxInfo;
 }) {
   const vendors = new Set(items.map((item) => item.vendor ?? "Unknown vendor"));
   const vendorLabel = vendors.size > 1 ? "Multiple vendors" : (items[0].vendor ?? "Unknown vendor");
@@ -536,13 +650,20 @@ function GroupCards({
         ))}
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2 text-xs font-semibold text-text-muted">
-        <span>Subtotal · {items.length} items</span>
-        <span className="tabular-nums text-text">{subtotal === null ? "—" : formatCurrency(subtotal)}</span>
-      </div>
+      {orderTax ? (
+        <div className="mt-2 border-t border-border pt-2">
+          <OrderTaxLines totals={orderTax.totals} itemCount={items.length} />
+        </div>
+      ) : (
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2 text-xs font-semibold text-text-muted">
+          <span>Subtotal · {items.length} items</span>
+          <span className="tabular-nums text-text">{subtotal === null ? "—" : formatCurrency(subtotal)}</span>
+        </div>
+      )}
 
       {canManage && (
-        <div className="mt-2">
+        <div className={orderTax ? "mt-2 flex flex-wrap items-center gap-2" : "mt-2"}>
+          {orderTax && <EditTaxModal receiptPath={orderTax.receiptPath} tax={orderTax.tax} />}
           <MarkReceivedButton
             itemIds={itemIds}
             module={module}

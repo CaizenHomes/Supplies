@@ -1,7 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
 import { markOrderedBatch, type MarkOrderedBatchActionState } from "@/lib/actions/order-actions";
+import { TaxInputs } from "@/components/orders/tax-inputs";
 
 const ORDERED_INITIAL: MarkOrderedBatchActionState = {};
 
@@ -9,9 +11,11 @@ const ORDERED_INITIAL: MarkOrderedBatchActionState = {};
 // together" moment. Once a group exists (2+ items sharing a receipt_path), marking it
 // received happens from the group's own header button (see order-table.tsx), not here.
 export function BulkActionBar({
+  module,
   selectedIds,
   onDone,
 }: {
+  module: "groceries" | "supplies";
   selectedIds: string[];
   onDone: () => void;
 }) {
@@ -30,6 +34,7 @@ export function BulkActionBar({
 
       {open && (
         <BulkMarkOrderedDialog
+          module={module}
           itemIds={selectedIds}
           onClose={() => setOpen(false)}
           onSuccess={onDone}
@@ -40,10 +45,12 @@ export function BulkActionBar({
 }
 
 function BulkMarkOrderedDialog({
+  module,
   itemIds,
   onClose,
   onSuccess,
 }: {
+  module: "groceries" | "supplies";
   itemIds: string[];
   onClose: () => void;
   onSuccess: () => void;
@@ -51,6 +58,7 @@ function BulkMarkOrderedDialog({
   const [fileName, setFileName] = useState<string | null>(null);
   const [state, formAction, isPending] = useActionState(markOrderedBatch, ORDERED_INITIAL);
   const [handledState, setHandledState] = useState(state);
+  const router = useRouter();
 
   if (state !== handledState) {
     setHandledState(state);
@@ -60,16 +68,27 @@ function BulkMarkOrderedDialog({
     }
   }
 
+  // If the order was saved but its tax wasn't, the server skipped refreshing the list so
+  // this message stays visible; clear the selection and refresh once the dialog is closed.
+  function close() {
+    onClose();
+    if (state.orderSaved) {
+      onSuccess();
+      router.refresh();
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(16,24,40,0.4)] p-modal-backdrop py-6 sm:items-center sm:p-modal-backdrop-lg"
-      onClick={(event) => event.target === event.currentTarget && onClose()}
+      onClick={(event) => event.target === event.currentTarget && close()}
     >
       <div className="w-full max-w-md rounded-xl bg-surface shadow-md sm:max-h-[90vh] sm:overflow-y-auto">
         <form action={formAction}>
           {itemIds.map((id) => (
             <input key={id} type="hidden" name="item_ids" value={id} />
           ))}
+          <input type="hidden" name="module" value={module} />
 
           <div className="border-b border-border px-modal-pad py-5 sm:px-modal-pad-lg">
             <h2 className="text-[17px] font-semibold text-text">
@@ -107,24 +126,32 @@ function BulkMarkOrderedDialog({
               Any file works. Filename will be saved with the record.
             </p>
 
+            {module === "groceries" && (
+              <div className="mt-4">
+                <TaxInputs idPrefix="bulk-order" />
+              </div>
+            )}
+
             {state.error && <p className="mt-3 text-sm text-danger">{state.error}</p>}
           </div>
 
           <div className="flex flex-col-reverse gap-2 rounded-b-xl border-t border-border bg-[#fafbfc] px-modal-pad py-3.5 sm:flex-row sm:justify-end sm:px-modal-pad-lg">
             <button
               type="button"
-              onClick={onClose}
+              onClick={close}
               className="w-full rounded-md border border-border-strong bg-surface px-3.5 py-3 text-sm font-medium text-text hover:bg-bg sm:w-auto sm:py-2"
             >
-              Cancel
+              {state.orderSaved ? "Close" : "Cancel"}
             </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:py-2"
-            >
-              {isPending ? "Confirming…" : `Confirm ${itemIds.length} orders`}
-            </button>
+            {!state.orderSaved && (
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full rounded-md bg-accent px-3.5 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:py-2"
+              >
+                {isPending ? "Confirming…" : `Confirm ${itemIds.length} orders`}
+              </button>
+            )}
           </div>
         </form>
       </div>

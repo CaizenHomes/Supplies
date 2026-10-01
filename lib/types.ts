@@ -261,6 +261,41 @@ export type Database = {
           },
         ]
       }
+      order_taxes: {
+        Row: {
+          gst: number | null
+          id: string
+          pst: number | null
+          receipt_path: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          gst?: number | null
+          id?: string
+          pst?: number | null
+          receipt_path: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          gst?: number | null
+          id?: string
+          pst?: number | null
+          receipt_path?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_taxes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           barcode: string | null
@@ -638,6 +673,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      budget_spent: { Args: { p_month: string }; Returns: number }
       counts_against_budget: {
         Args: { s: Database["public"]["Enums"]["item_status"] }
         Returns: boolean
