@@ -94,14 +94,17 @@ function buildTaxContext({ taxes, orderItems: allOrderItems }: OrderTaxData, can
   return { canManage, orders, homeVendor };
 }
 
-// The order whose tax summary renders in this vendor group, if any.
+// The order whose tax summary renders in this vendor group, if any. A fully cancelled or
+// rejected order (no item counts as spent) gets no tax UI at all: its tax doesn't count,
+// so there is nothing to show or edit.
 function orderInGroup(
   receiptPath: string | null,
   vendor: string,
   taxContext: TaxContext | undefined,
 ): HistoryOrder | undefined {
   if (!taxContext || !receiptPath || taxContext.homeVendor.get(receiptPath) !== vendor) return undefined;
-  return taxContext.orders.get(receiptPath);
+  const order = taxContext.orders.get(receiptPath);
+  return order?.totals.taxCounts ? order : undefined;
 }
 
 function vendorMoney(group: VendorGroup, taxContext: TaxContext) {

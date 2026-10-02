@@ -58,10 +58,13 @@ export function OrderTable({
   // row), so an order whose other items were cancelled still shows its full tax.
   const itemsByReceipt = groupOrderItems(orderTaxData?.orderItems ?? []);
 
+  // Undefined for a fully cancelled or rejected order (no item counts as spent): its tax
+  // doesn't count, so no tax UI renders for it.
   function orderTaxInfo(receiptPath: string | null): OrderTaxInfo | undefined {
     if (!orderTaxData || !receiptPath) return undefined;
     const tax = orderTaxData.taxes[receiptPath];
-    return { receiptPath, tax, totals: orderTotals(itemsByReceipt.get(receiptPath) ?? [], tax) };
+    const totals = orderTotals(itemsByReceipt.get(receiptPath) ?? [], tax);
+    return totals.taxCounts ? { receiptPath, tax, totals } : undefined;
   }
 
   function toggle(id: string) {
