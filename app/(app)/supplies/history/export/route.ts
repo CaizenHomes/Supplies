@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentProfile } from "@/lib/profile";
-import { createClient } from "@/lib/supabase/server";
+import { getHistoryItems, parseHistoryFilters } from "@/lib/history";
 
 function csvEscape(value: unknown): string {
   const str = value === null || value === undefined ? "" : String(value);
@@ -36,26 +36,23 @@ const COLUMNS = [
   "cancellation_reason",
 ] as const;
 
-export async function GET() {
+// Exports exactly the rows the History page shows for the same ?status= and ?month=.
+export async function GET(request: NextRequest) {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== "executive") {
     return NextResponse.json({ error: "Only executives can export history." }, { status: 403 });
   }
 
-  const supabase = await createClient();
-  const { data: items, error } = await supabase
-    .from("items_detailed")
-    .select("*")
-    .eq("module", "supplies")
-    .in("status", ["received", "rejected", "cancelled"])
-    .order("updated_at", { ascending: false });
+  const searchParams = request.nextUrl.searchParams;
+  const filters = parseHistoryFilters({ status: searchParams.get("status"), month: searchParams.get("month") });
+  const { items, error } = await getHistoryItems("supplies", filters);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error }, { status: 500 });
   }
 
   const header = COLUMNS.join(",");
-  const rows = (items ?? []).map((item) =>
+  const rows = items.map((item) =>
     COLUMNS.map((column) => csvEscape((item as Record<string, unknown>)[column])).join(","),
   );
   const csv = [header, ...rows].join("\n");
@@ -63,7 +60,7 @@ export async function GET() {
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="supplies-history-${new Date().toISOString().slice(0, 10)}.csv"`,
+      "Content-Disposition": `attachment; filename="supplies-history-${filters.month ?? new Date().toISOString().slice(0, 10)}.csv"`,
     },
   });
 }

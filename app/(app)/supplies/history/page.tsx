@@ -1,41 +1,26 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/profile";
-import { createClient } from "@/lib/supabase/server";
 import { getReceiptSignedUrl } from "@/lib/receipts";
+import { getHistoryItems, historyFiltersQuery, parseHistoryFilters } from "@/lib/history";
 import { HistoryFilter } from "@/components/history-filter";
+import { HistoryMonthCaption, HistoryNoMatches } from "@/components/history-notes";
 import { HistoryTable } from "@/components/history-table";
-
-type HistoryStatus = "received" | "rejected" | "cancelled";
-const HISTORY_STATUSES: readonly HistoryStatus[] = ["received", "rejected", "cancelled"];
-
-function isHistoryStatus(value: string | undefined): value is HistoryStatus {
-  return value === "received" || value === "rejected" || value === "cancelled";
-}
 
 export default async function SuppliesHistoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; month?: string }>;
 }) {
   const profile = await getCurrentProfile();
   if (!profile) {
     redirect("/login");
   }
 
-  const { status } = await searchParams;
-  const statusFilter = isHistoryStatus(status) ? status : null;
-  const statuses: readonly HistoryStatus[] = statusFilter ? [statusFilter] : HISTORY_STATUSES;
-
-  const supabase = await createClient();
-  const { data: items } = await supabase
-    .from("items_detailed")
-    .select("*")
-    .eq("module", "supplies")
-    .in("status", statuses)
-    .order("updated_at", { ascending: false });
+  const filters = parseHistoryFilters(await searchParams);
+  const { items, months, hasAny } = await getHistoryItems("supplies", filters);
 
   const history = await Promise.all(
-    (items ?? []).map(async (item) => ({
+    items.map(async (item) => ({
       ...item,
       receiptUrl: item.receipt_path ? await getReceiptSignedUrl(item.receipt_path) : null,
     })),
@@ -52,7 +37,7 @@ export default async function SuppliesHistoryPage({
         </div>
         {profile.role === "executive" && (
           <a
-            href="/supplies/history/export"
+            href={`/supplies/history/export${historyFiltersQuery(filters)}`}
             className="flex min-h-11 items-center rounded-md border border-border-strong bg-surface px-3.5 py-2 text-sm font-medium text-text hover:bg-bg sm:min-h-0"
           >
             Export CSV
@@ -60,13 +45,16 @@ export default async function SuppliesHistoryPage({
         )}
       </div>
 
-      <HistoryFilter basePath="/supplies/history" />
+      <HistoryFilter basePath="/supplies/history" months={months} />
+      {filters.month && <HistoryMonthCaption month={filters.month} />}
 
-      {history.length === 0 ? (
+      {!hasAny ? (
         <div className="rounded-lg border border-dashed border-border-strong bg-surface p-12 text-center text-text-muted">
           <p className="mb-1 text-[15px] font-medium text-text">No history yet</p>
           <p>Received, rejected, and cancelled supply requests appear here.</p>
         </div>
+      ) : history.length === 0 ? (
+        <HistoryNoMatches basePath="/supplies/history" />
       ) : (
         <HistoryTable items={history} />
       )}

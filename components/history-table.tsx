@@ -183,6 +183,7 @@ function itemRow(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } = 
       <td className="px-3.5 py-3 text-[12.5px] text-text">
         {item.checked_by_name ?? <span className="text-xs text-text-subtle">—</span>}
       </td>
+      <td className="px-3.5 py-3 text-[12.5px] text-text-muted">{formatDate(item.ordered_at)}</td>
       <td className="px-3.5 py-3 text-[12.5px] text-text-muted">{formatDate(completedAt)}</td>
     </tr>
   );
@@ -203,7 +204,7 @@ function footerRow(
       <td className={`px-3.5 ${pad} text-right text-xs tabular-nums text-text ${emphasis ? "font-semibold" : ""}`}>
         {amount}
       </td>
-      <td colSpan={4} className={`px-3.5 ${pad} text-right`}>
+      <td colSpan={5} className={`px-3.5 ${pad} text-right`}>
         {trailing}
       </td>
     </tr>
@@ -276,7 +277,8 @@ function itemCard(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } =
         </span>
         {!hideReceipt && item.receiptUrl && <ReceiptPill href={item.receiptUrl} />}
         {item.checked_by_name && <span>Verified by {item.checked_by_name}</span>}
-        <span>{formatDate(completedAt)}</span>
+        {item.ordered_at && <span>Ordered {formatDate(item.ordered_at)}</span>}
+        <span>Completed {formatDate(completedAt)}</span>
       </div>
     </div>
   );
@@ -376,15 +378,30 @@ export function HistoryTable({
   items,
   orderTaxData,
   canManage = false,
+  monthTotalLabel,
 }: {
   items: HistoryRow[];
   // Order-level GST/PST plus every item on the displayed orders. Only Groceries History
   // passes this; when it's undefined (Supplies) no tax UI renders at all.
   orderTaxData?: OrderTaxData;
   canManage?: boolean;
+  // Set when a month is selected (Groceries): renders one total for all shown rows, the sum
+  // of the vendor totals. With no status filter it equals that month's budget_spent() minus
+  // items still in_list or ordered but not yet received.
+  monthTotalLabel?: string;
 }) {
   const groups = groupByVendor(items);
   const taxContext = orderTaxData ? buildTaxContext(orderTaxData, canManage) : undefined;
+  const monthTotal =
+    monthTotalLabel && taxContext
+      ? groups.reduce(
+          (sum, group) => {
+            const money = vendorMoney(group, taxContext);
+            return { cents: sum.cents + money.totalCents, count: sum.count + group.countedCount };
+          },
+          { cents: 0, count: 0 },
+        )
+      : null;
 
   return (
     <>
@@ -417,6 +434,9 @@ export function HistoryTable({
               Verified by
             </th>
             <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+              Ordered
+            </th>
+            <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
               Completed
             </th>
           </tr>
@@ -428,7 +448,7 @@ export function HistoryTable({
             const rows = [
               <tr key={`${group.vendor}__header`} className="border-b border-border bg-bg">
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted"
                 >
                   {group.vendor}
@@ -443,7 +463,7 @@ export function HistoryTable({
                   return [
                     itemRow(unit.item),
                     <tr key={`${unit.key}__tax`} className="border-b border-border bg-bg">
-                      <td colSpan={7} className="px-3.5 py-2 pl-7">
+                      <td colSpan={8} className="px-3.5 py-2 pl-7">
                         <OrderTaxInline
                           totals={order.totals}
                           receiptPath={order.receiptPath}
@@ -466,7 +486,7 @@ export function HistoryTable({
                       Order · {formatDate(unit.date)}
                     </td>
                     <td className="px-3.5 py-1">{receiptUrl && <ReceiptPill href={receiptUrl} />}</td>
-                    <td colSpan={2} className="px-3.5 py-1" />
+                    <td colSpan={3} className="px-3.5 py-1" />
                   </tr>,
                   ...unit.items.map((item) => itemRow(item, { hideReceipt: true })),
                   ...(order ? orderFooterRows(unit.key, order, taxContext!.canManage) : []),
@@ -495,7 +515,7 @@ export function HistoryTable({
                       <td className="px-3.5 py-2 text-right text-xs font-semibold tabular-nums text-text">
                         {group.subtotal === null ? "—" : formatCurrency(group.subtotal)}
                       </td>
-                      <td colSpan={4} className="px-3.5 py-2" />
+                      <td colSpan={5} className="px-3.5 py-2" />
                     </tr>,
                   ]),
             ];
@@ -504,6 +524,18 @@ export function HistoryTable({
         </tbody>
       </table>
       </div>
+
+      {monthTotal && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3.5 py-3 text-sm shadow-sm">
+          <span className="font-semibold text-text">
+            {monthTotalLabel}
+            <span className="ml-1.5 text-xs font-normal text-text-muted">
+              · {monthTotal.count} item{monthTotal.count === 1 ? "" : "s"}, incl. tax
+            </span>
+          </span>
+          <span className="font-semibold tabular-nums text-text">{formatCents(monthTotal.cents)}</span>
+        </div>
+      )}
     </>
   );
 }
