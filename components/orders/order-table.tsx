@@ -15,7 +15,7 @@ import { MarkReceivedButton } from "@/components/orders/mark-received-button";
 import { CancelButton } from "@/components/orders/cancel-button";
 import { BulkActionBar } from "@/components/orders/bulk-action-bar";
 import { EditTaxModal } from "@/components/orders/edit-tax-modal";
-import { OrderTaxInline, OrderTaxLines, showOrderTax } from "@/components/orders/order-tax-summary";
+import { OrderTaxLines, showOrderTax } from "@/components/orders/order-tax-summary";
 import type { Tables } from "@/lib/types";
 
 type OrderRow = Tables<"items_detailed"> & { receiptUrl: string | null };
@@ -117,7 +117,7 @@ export function OrderTable({
               key={unit.key}
               item={unit.item}
               module={module}
-              footer={singleOrderTax(orderTaxInfo(unit.item.receipt_path), canManage)}
+              footer={singleOrderTaxCard(singleOrderTax(orderTaxInfo(unit.item.receipt_path), canManage), canManage)}
               actions={
                 canManage ? (
                   <>
@@ -221,7 +221,7 @@ export function OrderTable({
                 );
               }
 
-              const taxSummary = singleOrderTax(orderTaxInfo(unit.item.receipt_path), canManage);
+              const orderTax = singleOrderTax(orderTaxInfo(unit.item.receipt_path), canManage);
               return (
                 <Fragment key={unit.key}>
                   <ItemRow
@@ -244,14 +244,7 @@ export function OrderTable({
                     }
                     showReceipt
                   />
-                  {taxSummary && (
-                    <tr className="border-b border-border bg-bg">
-                      {canManage && <td className="px-3.5 py-2" />}
-                      <td colSpan={7} className="px-3.5 py-2">
-                        {taxSummary}
-                      </td>
-                    </tr>
-                  )}
+                  {orderTax && <OrderTaxFooterRows canManage={canManage} orderTax={orderTax} count="1 item" />}
                 </Fragment>
               );
             })}
@@ -275,12 +268,25 @@ function ReceiptPill({ href }: { href: string }) {
   );
 }
 
-// Order-level summary for an order rendered as a single item row/card; null when there's
-// nothing to show (Supplies, or no tax entered and the viewer can't add it).
-function singleOrderTax(info: OrderTaxInfo | undefined, canManage: boolean): ReactNode {
-  if (!info || !showOrderTax(info.totals, canManage)) return null;
+// Tax info for an order rendered as a single item row/card; undefined when there's nothing
+// to show (Supplies, a fully cancelled order, or no tax entered and the viewer can't add it).
+// Multi-item orders always show their footer, so this only applies to single items.
+function singleOrderTax(info: OrderTaxInfo | undefined, canManage: boolean): OrderTaxInfo | undefined {
+  return info && showOrderTax(info.totals, canManage) ? info : undefined;
+}
+
+// Mobile stacked tax lines for a single-item order card, laid out like GroupCards' footer.
+function singleOrderTaxCard(orderTax: OrderTaxInfo | undefined, canManage: boolean): ReactNode {
+  if (!orderTax) return null;
   return (
-    <OrderTaxInline totals={info.totals} receiptPath={info.receiptPath} tax={info.tax} canManage={canManage} />
+    <div className="border-t border-border pt-2">
+      <OrderTaxLines totals={orderTax.totals} itemCount={1} />
+      {canManage && (
+        <div className="mt-2">
+          <EditTaxModal receiptPath={orderTax.receiptPath} tax={orderTax.tax} />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -438,33 +444,12 @@ function GroupRows({
       ))}
 
       {orderTax ? (
-        <>
-          <OrderFooterRow canManage={canManage} label="Subtotal" count={`${items.length} items`}>
-            {formatCents(orderTax.totals.subtotalCents)}
-          </OrderFooterRow>
-          <OrderFooterRow canManage={canManage} label="GST">
-            {formatCents(orderTax.totals.gstCents)}
-          </OrderFooterRow>
-          <OrderFooterRow canManage={canManage} label="PST">
-            {formatCents(orderTax.totals.pstCents)}
-          </OrderFooterRow>
-          <tr className="border-b border-border bg-bg">
-            {canManage && <td className="px-3.5 pb-2 pt-1" />}
-            <td className="px-3.5 pb-2 pt-1 text-xs font-semibold text-text">Order total</td>
-            <td className="px-3.5 pb-2 pt-1" />
-            <td className="px-3.5 pb-2 pt-1 text-right text-xs font-semibold tabular-nums text-text">
-              {formatCents(orderTax.totals.totalCents)}
-            </td>
-            <td colSpan={4} className="px-3.5 pb-2 pt-1 text-right">
-              {canManage && (
-                <div className="flex items-center justify-end gap-2">
-                  <EditTaxModal receiptPath={orderTax.receiptPath} tax={orderTax.tax} />
-                  {markReceived}
-                </div>
-              )}
-            </td>
-          </tr>
-        </>
+        <OrderTaxFooterRows
+          canManage={canManage}
+          orderTax={orderTax}
+          count={`${items.length} items`}
+          trailing={markReceived}
+        />
       ) : (
         <tr className="border-b border-border bg-bg">
           {canManage && <td className="px-3.5 py-2" />}
@@ -484,7 +469,52 @@ function GroupRows({
   );
 }
 
-// One Subtotal/GST/PST line of a multi-item order's footer, amount in the Total column.
+// An order's stacked Subtotal / GST / PST / Order total rows (Groceries only), amounts in
+// the Total column and Edit/Add tax on the Order total line. `trailing` adds actions after
+// it (a multi-item order's Mark received).
+function OrderTaxFooterRows({
+  canManage,
+  orderTax,
+  count,
+  trailing,
+}: {
+  canManage: boolean;
+  orderTax: OrderTaxInfo;
+  count: string;
+  trailing?: ReactNode;
+}) {
+  return (
+    <>
+      <OrderFooterRow canManage={canManage} label="Subtotal" count={count}>
+        {formatCents(orderTax.totals.subtotalCents)}
+      </OrderFooterRow>
+      <OrderFooterRow canManage={canManage} label="GST">
+        {formatCents(orderTax.totals.gstCents)}
+      </OrderFooterRow>
+      <OrderFooterRow canManage={canManage} label="PST">
+        {formatCents(orderTax.totals.pstCents)}
+      </OrderFooterRow>
+      <tr className="border-b border-border bg-bg">
+        {canManage && <td className="px-3.5 pb-2 pt-1" />}
+        <td className="px-3.5 pb-2 pt-1 text-xs font-semibold text-text">Order total</td>
+        <td className="px-3.5 pb-2 pt-1" />
+        <td className="px-3.5 pb-2 pt-1 text-right text-xs font-semibold tabular-nums text-text">
+          {formatCents(orderTax.totals.totalCents)}
+        </td>
+        <td colSpan={4} className="px-3.5 pb-2 pt-1 text-right">
+          {canManage && (
+            <div className="flex items-center justify-end gap-2">
+              <EditTaxModal receiptPath={orderTax.receiptPath} tax={orderTax.tax} />
+              {trailing}
+            </div>
+          )}
+        </td>
+      </tr>
+    </>
+  );
+}
+
+// One Subtotal/GST/PST line of an order's footer, amount in the Total column.
 function OrderFooterRow({
   canManage,
   label,

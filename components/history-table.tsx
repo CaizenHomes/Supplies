@@ -10,7 +10,7 @@ import {
   type OrderTaxInfo,
 } from "@/lib/order-totals";
 import { EditTaxModal } from "@/components/orders/edit-tax-modal";
-import { OrderTaxInline, OrderTaxLines, showOrderTax } from "@/components/orders/order-tax-summary";
+import { OrderTaxLines, showOrderTax } from "@/components/orders/order-tax-summary";
 import type { Tables } from "@/lib/types";
 
 type HistoryRow = Tables<"items_detailed"> & { receiptUrl: string | null };
@@ -214,7 +214,7 @@ function footerRow(
   );
 }
 
-// Subtotal / GST / PST / Order total under a multi-item order's rows (Groceries only).
+// Subtotal / GST / PST / Order total under an order's rows (Groceries only).
 function orderFooterRows(key: string, order: HistoryOrder, canManage: boolean) {
   const { totals } = order;
   return [
@@ -287,6 +287,20 @@ function itemCard(item: HistoryRow, { hideReceipt }: { hideReceipt?: boolean } =
   );
 }
 
+// Mobile stacked Subtotal / GST / PST / Order total under an order's cards (Groceries only).
+function orderTaxCardLines(key: string, order: HistoryOrder, canManage: boolean) {
+  return (
+    <div key={`${key}__tax`} className="pl-1">
+      <OrderTaxLines totals={order.totals} itemCount={order.countedCount} />
+      {canManage && (
+        <div className="mt-1.5">
+          <EditTaxModal receiptPath={order.receiptPath} tax={order.tax} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Mobile card equivalent of a vendor group — header, nested order sub-groups, subtotal.
 function GroupCard({ group, taxContext }: { group: VendorGroup; taxContext?: TaxContext }) {
   const units = buildReceiptRenderUnits(group.items, (item) => item.checked_at);
@@ -304,17 +318,7 @@ function GroupCard({ group, taxContext }: { group: VendorGroup; taxContext?: Tax
             if (!order || !showOrderTax(order.totals, taxContext!.canManage)) {
               return [itemCard(unit.item)];
             }
-            return [
-              itemCard(unit.item),
-              <div key={`${unit.key}__tax`} className="pl-1">
-                <OrderTaxInline
-                  totals={order.totals}
-                  receiptPath={order.receiptPath}
-                  tax={order.tax}
-                  canManage={taxContext!.canManage}
-                />
-              </div>,
-            ];
+            return [itemCard(unit.item), orderTaxCardLines(unit.key, order, taxContext!.canManage)];
           }
 
           const receiptUrl = unit.items.find((item) => item.receiptUrl)?.receiptUrl ?? null;
@@ -328,18 +332,7 @@ function GroupCard({ group, taxContext }: { group: VendorGroup; taxContext?: Tax
               {receiptUrl && <ReceiptPill href={receiptUrl} />}
             </div>,
             ...unit.items.map((item) => itemCard(item, { hideReceipt: true })),
-            ...(order
-              ? [
-                  <div key={`${unit.key}__tax`} className="pl-1">
-                    <OrderTaxLines totals={order.totals} itemCount={order.countedCount} />
-                    {taxContext!.canManage && (
-                      <div className="mt-1.5">
-                        <EditTaxModal receiptPath={order.receiptPath} tax={order.tax} />
-                      </div>
-                    )}
-                  </div>,
-                ]
-              : []),
+            ...(order ? [orderTaxCardLines(unit.key, order, taxContext!.canManage)] : []),
           ];
         })}
       </div>
@@ -463,19 +456,7 @@ export function HistoryTable({
                   if (!order || !showOrderTax(order.totals, taxContext!.canManage)) {
                     return [itemRow(unit.item)];
                   }
-                  return [
-                    itemRow(unit.item),
-                    <tr key={`${unit.key}__tax`} className="border-b border-border bg-bg">
-                      <td colSpan={8} className="px-3.5 py-2 pl-7">
-                        <OrderTaxInline
-                          totals={order.totals}
-                          receiptPath={order.receiptPath}
-                          tax={order.tax}
-                          canManage={taxContext!.canManage}
-                        />
-                      </td>
-                    </tr>,
-                  ];
+                  return [itemRow(unit.item), ...orderFooterRows(unit.key, order, taxContext!.canManage)];
                 }
 
                 const receiptUrl = unit.items.find((item) => item.receiptUrl)?.receiptUrl ?? null;
